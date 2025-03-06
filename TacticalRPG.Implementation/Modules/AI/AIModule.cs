@@ -1,21 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TacticalRPG.Core.Framework;
 using TacticalRPG.Core.Modules.AI;
 using TacticalRPG.Core.Modules.Battle;
-using TacticalRPG.Core.Modules.Character;
 
 namespace TacticalRPG.Implementation.Modules.AI
 {
     /// <summary>
     /// AI模块实现
     /// </summary>
-    public class AIModule : GameModuleBase, IAIModule
+    public class AIModule : BaseGameModule, IAIModule
     {
-        private readonly ILogger<AIModule> _logger;
         private readonly IAIControllerFactory _controllerFactory;
         private readonly IAIStrategySelector _strategySelector;
         private readonly Dictionary<Guid, IAIController> _characterControllers = new Dictionary<Guid, IAIController>();
@@ -38,11 +32,11 @@ namespace TacticalRPG.Implementation.Modules.AI
         /// <param name="controllerFactory">AI控制器工厂</param>
         /// <param name="strategySelector">AI策略选择器</param>
         public AIModule(
+            IGameSystem gameSystem,
             ILogger<AIModule> logger,
             IAIControllerFactory controllerFactory,
-            IAIStrategySelector strategySelector)
+            IAIStrategySelector strategySelector) : base(gameSystem, logger)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _controllerFactory = controllerFactory ?? throw new ArgumentNullException(nameof(controllerFactory));
             _strategySelector = strategySelector ?? throw new ArgumentNullException(nameof(strategySelector));
         }
@@ -59,24 +53,24 @@ namespace TacticalRPG.Implementation.Modules.AI
             {
                 if (_characterControllers.ContainsKey(characterId))
                 {
-                    _logger.LogWarning($"角色 {characterId} 已经有AI控制器，将被替换");
+                    Logger.LogWarning($"角色 {characterId} 已经有AI控制器，将被替换");
                     _characterControllers.Remove(characterId);
                 }
 
                 var controller = _controllerFactory.CreateController(aiType);
                 if (controller == null)
                 {
-                    _logger.LogError($"无法为类型 {aiType} 创建AI控制器");
+                    Logger.LogError($"无法为类型 {aiType} 创建AI控制器");
                     return Task.FromResult(false);
                 }
 
                 _characterControllers[characterId] = controller;
-                _logger.LogInformation($"已为角色 {characterId} 分配类型为 {aiType} 的AI控制器");
+                Logger.LogInformation($"已为角色 {characterId} 分配类型为 {aiType} 的AI控制器");
                 return Task.FromResult(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"为角色 {characterId} 分配AI控制器时发生错误");
+                Logger.LogError(ex, $"为角色 {characterId} 分配AI控制器时发生错误");
                 return Task.FromResult(false);
             }
         }
@@ -90,12 +84,12 @@ namespace TacticalRPG.Implementation.Modules.AI
         {
             if (!_characterControllers.ContainsKey(characterId))
             {
-                _logger.LogWarning($"角色 {characterId} 没有AI控制器，无法移除");
+                Logger.LogWarning($"角色 {characterId} 没有AI控制器，无法移除");
                 return Task.FromResult(false);
             }
 
             _characterControllers.Remove(characterId);
-            _logger.LogInformation($"已移除角色 {characterId} 的AI控制器");
+            Logger.LogInformation($"已移除角色 {characterId} 的AI控制器");
             return Task.FromResult(true);
         }
 
@@ -108,7 +102,7 @@ namespace TacticalRPG.Implementation.Modules.AI
         {
             if (!_characterControllers.TryGetValue(characterId, out var controller))
             {
-                _logger.LogWarning($"角色 {characterId} 没有AI控制器");
+                Logger.LogWarning($"角色 {characterId} 没有AI控制器");
                 return null;
             }
 
@@ -125,32 +119,33 @@ namespace TacticalRPG.Implementation.Modules.AI
         {
             if (character == null)
             {
-                _logger.LogError("无法执行AI回合：角色为null");
-                return new AIActionResult(false, "角色为null");
+                Logger.LogError("无法执行AI回合：角色为null");
+                return AIActionResult.CreateFailure(AIAction.CreateEndTurnAction(), "角色为null");
             }
 
             if (battle == null)
             {
-                _logger.LogError("无法执行AI回合：战斗为null");
-                return new AIActionResult(false, "战斗为null");
+                Logger.LogError("无法执行AI回合：战斗为null");
+                return AIActionResult.CreateFailure(AIAction.CreateEndTurnAction(), "战斗为null");
             }
 
-            if (!_characterControllers.TryGetValue(character.Id, out var controller))
+            if (!_characterControllers.TryGetValue(character.Character.Id, out var controller))
             {
                 // 如果角色没有指定控制器，使用默认控制器
                 controller = _controllerFactory.CreateController(AIType.Basic);
-                _characterControllers[character.Id] = controller;
-                _logger.LogWarning($"角色 {character.Id} 没有AI控制器，使用默认控制器");
+                _characterControllers[character.Character.Id] = controller;
+                Logger.LogWarning($"角色 {character.Character.Id} 没有AI控制器，使用默认控制器");
             }
 
             try
             {
-                return await controller.ExecuteTurn(character, battle);
+                var action = await controller.DecideNextAction(character, battle);
+                return AIActionResult.CreateSuccess(action);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"执行角色 {character.Id} 的AI回合时发生错误");
-                return new AIActionResult(false, $"AI执行错误: {ex.Message}");
+                Logger.LogError(ex, $"执行角色 {character.Character.Id} 的AI回合时发生错误");
+                return AIActionResult.CreateFailure(AIAction.CreateEndTurnAction(), $"AI执行错误: {ex.Message}");
             }
         }
 
@@ -164,12 +159,12 @@ namespace TacticalRPG.Implementation.Modules.AI
         {
             if (_registeredStrategies.ContainsKey(aiType))
             {
-                _logger.LogWarning($"AI类型 {aiType} 已经注册，将被替换");
+                Logger.LogWarning($"AI类型 {aiType} 已经注册，将被替换");
                 _registeredStrategies.Remove(aiType);
             }
 
             _registeredStrategies[aiType] = factory;
-            _logger.LogInformation($"已注册类型为 {aiType} 的AI策略");
+            Logger.LogInformation($"已注册类型为 {aiType} 的AI策略");
             return true;
         }
     }

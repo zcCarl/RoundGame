@@ -9,7 +9,7 @@ namespace TacticalRPG.Core.Modules.Skill
     /// <summary>
     /// 技能模块接口
     /// </summary>
-    public interface ISkillModule : IGameModule
+    public interface ISkillModule
     {
         /// <summary>
         /// 创建技能

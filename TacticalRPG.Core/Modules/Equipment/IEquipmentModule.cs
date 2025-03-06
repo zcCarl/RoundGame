@@ -8,7 +8,7 @@ namespace TacticalRPG.Core.Modules.Equipment
     /// <summary>
     /// 定义装备模块的接口，负责管理游戏中的装备系统
     /// </summary>
-    public interface IEquipmentModule : IGameModule
+    public interface IEquipmentModule
     {
         /// <summary>
         /// 获取装备工厂实例

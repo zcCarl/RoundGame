@@ -8,7 +8,7 @@ namespace TacticalRPG.Core.Modules.Map
     /// <summary>
     /// 地图模块接口
     /// </summary>
-    public interface IMapModule : IGameModule
+    public interface IMapModule
     {
         /// <summary>
         /// 创建新地图

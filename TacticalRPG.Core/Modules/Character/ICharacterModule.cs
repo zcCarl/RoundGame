@@ -9,7 +9,7 @@ namespace TacticalRPG.Core.Modules.Character
     /// <summary>
     /// 角色模块接口
     /// </summary>
-    public interface ICharacterModule : IGameModule
+    public interface ICharacterModule
     {
         /// <summary>
         /// 创建角色

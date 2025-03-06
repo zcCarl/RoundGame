@@ -9,7 +9,7 @@ namespace TacticalRPG.Core.Modules.Buff
     /// <summary>
     /// Buff模块接口
     /// </summary>
-    public interface IBuffModule : IGameModule
+    public interface IBuffModule
     {
         /// <summary>
         /// 获取Buff工厂

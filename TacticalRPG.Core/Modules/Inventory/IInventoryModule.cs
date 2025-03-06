@@ -8,7 +8,7 @@ namespace TacticalRPG.Core.Modules.Inventory
     /// <summary>
     /// 物品背包模块接口，负责管理游戏中的所有物品和背包
     /// </summary>
-    public interface IInventoryModule : IGameModule
+    public interface IInventoryModule
     {
         /// <summary>
         /// 获取物品管理器

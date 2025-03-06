@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using TacticalRPG.Core.Framework;
 using TacticalRPG.Core.Framework.Events;
 using TacticalRPG.Core.Modules.Map;
@@ -10,33 +11,22 @@ namespace TacticalRPG.Implementation.Modules.Map
     /// <summary>
     /// 地图模块占位实现
     /// </summary>
-    public class MapModule : IMapModule
+    public class MapModule : BaseGameModule, IMapModule
     {
-        private readonly IEventManager _eventManager;
 
-        /// <summary>
-        /// 模块名称
-        /// </summary>
-        public string ModuleName => "Map";
-
-        /// <summary>
-        /// 模块优先级
-        /// </summary>
-        public int Priority => 10;
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="eventManager">事件管理器</param>
-        public MapModule(IEventManager eventManager)
+        public MapModule(IGameSystem gameSystem, ILogger logger) : base(gameSystem, logger)
         {
-            _eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
+
         }
+
+
+        public override string ModuleName => "Map";
+
 
         /// <summary>
         /// 初始化模块
         /// </summary>
-        public Task Initialize()
+        public override Task Initialize()
         {
             Console.WriteLine("地图模块初始化");
             return Task.CompletedTask;
@@ -45,7 +35,7 @@ namespace TacticalRPG.Implementation.Modules.Map
         /// <summary>
         /// 启动模块
         /// </summary>
-        public Task Start()
+        public override Task Start()
         {
             Console.WriteLine("地图模块启动");
             return Task.CompletedTask;
@@ -54,7 +44,7 @@ namespace TacticalRPG.Implementation.Modules.Map
         /// <summary>
         /// 暂停模块
         /// </summary>
-        public Task Pause()
+        public override Task Pause()
         {
             Console.WriteLine("地图模块暂停");
             return Task.CompletedTask;
@@ -63,7 +53,7 @@ namespace TacticalRPG.Implementation.Modules.Map
         /// <summary>
         /// 恢复模块
         /// </summary>
-        public Task Resume()
+        public override Task Resume()
         {
             Console.WriteLine("地图模块恢复");
             return Task.CompletedTask;
@@ -72,7 +62,7 @@ namespace TacticalRPG.Implementation.Modules.Map
         /// <summary>
         /// 停止模块
         /// </summary>
-        public Task Stop()
+        public override Task Stop()
         {
             Console.WriteLine("地图模块停止");
             return Task.CompletedTask;
@@ -81,7 +71,7 @@ namespace TacticalRPG.Implementation.Modules.Map
         /// <summary>
         /// 卸载模块
         /// </summary>
-        public Task Unload()
+        public override Task Unload()
         {
             Console.WriteLine("地图模块卸载");
             return Task.CompletedTask;

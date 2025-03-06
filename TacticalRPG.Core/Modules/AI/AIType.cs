@@ -11,6 +11,11 @@ namespace TacticalRPG.Core.Modules.AI
         None = 0,
 
         /// <summary>
+        /// 基础AI
+        /// </summary>
+        Basic = 1,
+
+        /// <summary>
         /// 进攻型AI
         /// </summary>
         Aggressive = 1,

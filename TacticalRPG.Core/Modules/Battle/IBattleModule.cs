@@ -10,7 +10,7 @@ namespace TacticalRPG.Core.Modules.Battle
     /// <summary>
     /// 战斗模块接口
     /// </summary>
-    public interface IBattleModule : IGameModule
+    public interface IBattleModule
     {
         /// <summary>
         /// 当前战斗

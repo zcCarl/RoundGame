@@ -9,7 +9,7 @@ namespace TacticalRPG.Core.Modules.AI
     /// <summary>
     /// AI模块接口，负责管理游戏中的AI行为
     /// </summary>
-    public interface IAIModule : IGameModule
+    public interface IAIModule
     {
         /// <summary>
         /// 为角色分配AI控制器

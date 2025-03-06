@@ -327,7 +327,7 @@ namespace TacticalRPG.Implementation.Modules.AI
             var availableSkills = new List<SkillInfo>();
 
             // 获取所有技能
-            var skills = character.Character.Skills.ToList();
+            var skillIds = character.Character.SkillIds.ToList();
 
             // 获取敌方队伍
             var enemyTeam = character.Team == BattleTeam.Player ? BattleTeam.Enemy : BattleTeam.Player;
@@ -338,8 +338,12 @@ namespace TacticalRPG.Implementation.Modules.AI
                 .Where(c => c.Character.Id != character.Character.Id)
                 .ToList();
 
-            foreach (var skill in skills)
+            foreach (var skillId in skillIds)
             {
+                ISkill skill = character.Character.GetSkill(skillId);
+                if (skill == null)
+                    continue;
+
                 // 检查MP是否足够
                 if (character.CurrentMP < skill.MPCost)
                     continue;

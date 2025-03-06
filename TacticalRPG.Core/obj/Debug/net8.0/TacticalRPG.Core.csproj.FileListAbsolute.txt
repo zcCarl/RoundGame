@@ -10,3 +10,4 @@
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/refint/TacticalRPG.Core.dll
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/TacticalRPG.Core.pdb
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/ref/TacticalRPG.Core.dll
+/Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/TacticalRPG.Core.sourcelink.json

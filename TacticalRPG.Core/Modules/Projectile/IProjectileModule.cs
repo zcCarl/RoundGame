@@ -9,7 +9,7 @@ namespace TacticalRPG.Core.Modules.Projectile
     /// <summary>
     /// 定义投射物模块的接口，负责管理游戏中的所有投射物
     /// </summary>
-    public interface IProjectileModule : IGameModule
+    public interface IProjectileModule
     {
         /// <summary>
         /// 获取投射物工厂实例

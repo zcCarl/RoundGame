@@ -3,3 +3,4 @@
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Implementation/obj/Debug/net8.0/TacticalRPG.Implementation.AssemblyInfoInputs.cache
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Implementation/obj/Debug/net8.0/TacticalRPG.Implementation.AssemblyInfo.cs
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Implementation/obj/Debug/net8.0/TacticalRPG.Implementation.csproj.CoreCompileInputs.cache
+/Users/quanchao/Cursor/RoundGame/TacticalRPG.Implementation/obj/Debug/net8.0/TacticalRPG.Implementation.sourcelink.json
