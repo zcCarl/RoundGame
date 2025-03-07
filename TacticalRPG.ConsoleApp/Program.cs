@@ -73,7 +73,7 @@ namespace TacticalRPG.ConsoleApp
 
             // 添加游戏框架核心服务
             services.AddGameFramework();
-
+            services.AddTacticalRPGImplementation();
             return services.BuildServiceProvider();
         }
     }

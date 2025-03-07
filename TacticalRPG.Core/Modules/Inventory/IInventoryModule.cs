@@ -53,8 +53,8 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <param name="templateId">物品模板ID</param>
         /// <param name="amount">数量</param>
         /// <param name="inventoryType">目标背包类型</param>
-        /// <returns>是否成功添加</returns>
-        Task<bool> AddItemToCharacterAsync(Guid characterId, string templateId, int amount = 1, InventoryType inventoryType = InventoryType.Normal);
+        /// <returns>添加结果，如果成功则返回槽位索引，否则返回-1</returns>
+        int AddItemToCharacter(Guid characterId, string templateId, int amount = 1, InventoryType inventoryType = InventoryType.Normal);
 
         /// <summary>
         /// 给角色添加物品
@@ -62,8 +62,8 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <param name="characterId">角色ID</param>
         /// <param name="item">物品实例</param>
         /// <param name="inventoryType">目标背包类型</param>
-        /// <returns>是否成功添加</returns>
-        Task<bool> AddItemToCharacterAsync(Guid characterId, IItem item, InventoryType inventoryType = InventoryType.Normal);
+        /// <returns>添加结果，如果成功则返回槽位索引，否则返回-1</returns>
+        int AddItemToCharacter(Guid characterId, IItem item, InventoryType inventoryType = InventoryType.Normal);
 
         /// <summary>
         /// 从角色背包移除物品

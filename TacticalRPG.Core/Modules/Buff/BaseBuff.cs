@@ -89,17 +89,7 @@ namespace TacticalRPG.Core.Modules.Buff
         /// </summary>
         public string VisualEffectId { get; protected set; }
 
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        protected BaseBuff()
-        {
-            Id = Guid.NewGuid();
-            StackCount = 1;
-            MaxStackCount = 1;
-            IsStackable = false;
-            IsHidden = false;
-        }
+
 
         /// <summary>
         /// 构造函数

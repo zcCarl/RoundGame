@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TacticalRPG.Implementation")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9d04980cf003b8138837296476bb0c3bcfc0e612")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8fe88d5283df5454db7de2825d1b29fbe141fafa")]
 [assembly: System.Reflection.AssemblyProductAttribute("TacticalRPG.Implementation")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TacticalRPG.Implementation")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

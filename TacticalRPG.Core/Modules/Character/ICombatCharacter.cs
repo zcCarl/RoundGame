@@ -62,7 +62,7 @@ namespace TacticalRPG.Core.Modules.Character
         /// <param name="damage">伤害值</param>
         /// <param name="source">伤害来源</param>
         /// <returns>实际伤害值</returns>
-        Task<int> TakeDamageAsync(int damage, ICharacter source = null);
+        Task<int> TakeDamageAsync(int damage, ICharacter? source = null);
 
         /// <summary>
         /// 治疗生命值
@@ -70,7 +70,7 @@ namespace TacticalRPG.Core.Modules.Character
         /// <param name="amount">治疗量</param>
         /// <param name="source">治疗来源</param>
         /// <returns>实际恢复值</returns>
-        Task<int> HealAsync(int amount, ICharacter source = null);
+        Task<int> HealAsync(int amount, ICharacter? source = null);
 
         /// <summary>
         /// 恢复魔法值

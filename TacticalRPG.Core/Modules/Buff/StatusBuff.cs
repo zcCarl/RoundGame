@@ -24,12 +24,6 @@ namespace TacticalRPG.Core.Modules.Buff
         /// </summary>
         public event EventHandler<StatusEffectChangeEventArgs> OnAfterStatusEffectChange;
 
-        /// <summary>
-        /// 默认构造函数
-        /// </summary>
-        protected StatusBuff() : base()
-        {
-        }
 
         /// <summary>
         /// 构造函数

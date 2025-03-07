@@ -28,7 +28,7 @@ namespace TacticalRPG.Core.Modules.Equipment
             EquipmentRarity rarity,
             Dictionary<EquipmentStatType, float> stats,
             int level = 1,
-            IEnumerable<CharacterClass> allowedClasses = null);
+            IEnumerable<CharacterClass>? allowedClasses = null);
 
         /// <summary>
         /// 创建武器
@@ -55,12 +55,12 @@ namespace TacticalRPG.Core.Modules.Equipment
             int baseDamage,
             int attackRange,
             float attackSpeed,
-            Dictionary<EquipmentStatType, float> stats = null,
+            Dictionary<EquipmentStatType, float>? stats = null,
             int level = 1,
             bool isTwoHanded = false,
             SkillEffectType elementalDamageType = SkillEffectType.None,
             int elementalDamage = 0,
-            IEnumerable<CharacterClass> allowedClasses = null);
+            IEnumerable<CharacterClass>? allowedClasses = null);
 
         /// <summary>
         /// 创建护甲
@@ -82,9 +82,9 @@ namespace TacticalRPG.Core.Modules.Equipment
             EquipmentRarity rarity,
             int physicalDefense,
             int magicalDefense,
-            Dictionary<EquipmentStatType, float> stats = null,
+            Dictionary<EquipmentStatType, float>? stats = null,
             int level = 1,
-            IEnumerable<CharacterClass> allowedClasses = null);
+            IEnumerable<CharacterClass>? allowedClasses = null);
 
         /// <summary>
         /// 创建饰品
@@ -106,7 +106,7 @@ namespace TacticalRPG.Core.Modules.Equipment
             Dictionary<EquipmentStatType, float> stats,
             int level = 1,
             string specialEffect = "",
-            IEnumerable<CharacterClass> allowedClasses = null);
+            IEnumerable<CharacterClass>? allowedClasses = null);
 
         /// <summary>
         /// 创建消耗品
@@ -127,7 +127,7 @@ namespace TacticalRPG.Core.Modules.Equipment
             EquipmentStatType effectType,
             float effectValue,
             int durability = 1,
-            Dictionary<EquipmentStatType, float> stats = null,
+            Dictionary<EquipmentStatType, float>? stats = null,
             int effectDuration = 0);
 
         /// <summary>
@@ -152,7 +152,7 @@ namespace TacticalRPG.Core.Modules.Equipment
             EquipmentRarity minRarity = EquipmentRarity.Common,
             EquipmentRarity maxRarity = EquipmentRarity.Legendary,
             int level = 1,
-            IEnumerable<CharacterClass> allowedClasses = null);
+            IEnumerable<CharacterClass>? allowedClasses = null);
 
         /// <summary>
         /// 创建套装装备

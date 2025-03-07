@@ -20,20 +20,20 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         private readonly IDropManager _dropManager;
         private readonly IConfigManager _configManager;
 
-        public async Task<bool> AddItemToCharacterAsync(Guid characterId, string itemId, int count, InventoryType inventoryType)
+        public int AddItemToCharacter(Guid characterId, string itemId, int count, InventoryType inventoryType)
         {
-            var item = await _itemManager.(itemId);
-            if (item == null) return false;
-            return await AddItemToCharacterAsync(characterId, item, inventoryType);
+            var item = _itemManager.CreateItem(itemId);
+            if (item == null) return -1;
+            return AddItemToCharacter(characterId, item, inventoryType);
         }
 
-        public async Task<bool> AddItemToCharacterAsync(Guid characterId, IItem item, InventoryType inventoryType)
+        public int AddItemToCharacter(Guid characterId, IItem item, InventoryType inventoryType)
         {
-            if (!_characterInventories.ContainsKey(characterId)) return false;
-            if (!_characterInventories[characterId].ContainsKey(inventoryType)) return false;
+            if (!_characterInventories.ContainsKey(characterId)) return -1;
+            if (!_characterInventories[characterId].ContainsKey(inventoryType)) return -1;
 
             var inventory = _characterInventories[characterId][inventoryType];
-            return await inventory.AddItemAsync(item);
+            return inventory.AddItem(item);
         }
         private readonly Dictionary<Guid, Dictionary<InventoryType, IInventory>> _characterInventories = new Dictionary<Guid, Dictionary<InventoryType, IInventory>>();
         private readonly Dictionary<Guid, IInventory> _inventories = new Dictionary<Guid, IInventory>();

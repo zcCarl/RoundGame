@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using TacticalRPG.Core.Framework;
 using TacticalRPG.Core.Modules.Character;
 
@@ -10,7 +11,7 @@ namespace TacticalRPG.Core.Modules.Buff
     /// <summary>
     /// Buff模块实现类
     /// </summary>
-    public class BuffModule : GameModuleBase, IBuffModule
+    public class BuffModule : BaseGameModule, IBuffModule
     {
         private readonly Dictionary<Guid, IBuff> _buffs;
         private readonly Dictionary<Guid, List<Guid>> _characterBuffs;
@@ -34,7 +35,8 @@ namespace TacticalRPG.Core.Modules.Buff
         /// <summary>
         /// 构造函数
         /// </summary>
-        public BuffModule()
+        public BuffModule(IGameSystem gameSystem, ILogger<BuffModule> logger)
+            : base(gameSystem, logger)
         {
             _buffs = new Dictionary<Guid, IBuff>();
             _characterBuffs = new Dictionary<Guid, List<Guid>>();

@@ -54,7 +54,7 @@ namespace TacticalRPG.Core.Modules.Equipment
             EquipmentRarity rarity,
             Dictionary<EquipmentStatType, float> stats,
             int level = 1,
-            IEnumerable<CharacterClass> allowedClasses = null);
+            IEnumerable<CharacterClass>? allowedClasses = null);
 
         /// <summary>
         /// 创建并注册武器
@@ -78,7 +78,7 @@ namespace TacticalRPG.Core.Modules.Equipment
             int baseDamage,
             int attackRange,
             float attackSpeed,
-            Dictionary<EquipmentStatType, float> stats = null,
+            Dictionary<EquipmentStatType, float>? stats = null,
             int level = 1,
             bool isTwoHanded = false);
 

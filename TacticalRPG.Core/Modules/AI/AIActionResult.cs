@@ -13,12 +13,12 @@ namespace TacticalRPG.Core.Modules.AI
         /// <summary>
         /// 执行的行动
         /// </summary>
-        public AIAction Action { get; set; }
+        public required AIAction Action { get; set; }
 
         /// <summary>
         /// 结果消息
         /// </summary>
-        public string Message { get; set; }
+        public required string Message { get; set; }
 
         /// <summary>
         /// 创建成功结果

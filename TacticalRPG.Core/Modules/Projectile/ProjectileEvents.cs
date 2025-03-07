@@ -124,7 +124,7 @@ namespace TacticalRPG.Core.Modules.Projectile
         /// <param name="hitType">命中类型</param>
         /// <param name="targetId">被命中的目标ID（可选）</param>
         /// <param name="hitData">命中效果数据（可选）</param>
-        public ProjectileHitEventArgs(Guid projectileId, (int x, int y) hitPosition, ProjectileHitType hitType, Guid? targetId = null, object hitData = null)
+        public ProjectileHitEventArgs(Guid projectileId, (int x, int y) hitPosition, ProjectileHitType hitType, Guid? targetId = null, object? hitData = null)
         {
             ProjectileId = projectileId;
             HitPosition = hitPosition;
