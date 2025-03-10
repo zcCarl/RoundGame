@@ -1,93 +1,152 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using TacticalRPG.Core.Modules.Config;
 
 namespace TacticalRPG.Implementation.Modules.Config
 {
     /// <summary>
-    /// 配置工厂，用于创建和获取配置管理器
+    /// 配置工厂实现类，负责创建和初始化各种配置对象
     /// </summary>
-    public static class ConfigFactory
+    public class ConfigFactory : IConfigFactory
     {
-        private static readonly object _lockObj = new object();
-        private static IConfigManager _instance;
+        private readonly IConfigManager _configManager;
+        private readonly ILogger<ConfigFactory> _logger;
+        private readonly Dictionary<Type, Delegate> _configCreators = new Dictionary<Type, Delegate>();
 
         /// <summary>
-        /// 获取配置管理器实例（单例模式）
+        /// 构造函数
         /// </summary>
-        /// <param name="configFolderPath">配置文件夹路径</param>
-        /// <returns>配置管理器实例</returns>
-        public static IConfigManager GetConfigManager(string configFolderPath = null)
+        /// <param name="configManager">配置管理器</param>
+        /// <param name="logger">日志器</param>
+        public ConfigFactory(IConfigManager configManager, ILogger<ConfigFactory> logger)
         {
-            if (_instance != null)
-                return _instance;
+            _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
 
-            lock (_lockObj)
+        /// <summary>
+        /// 创建配置对象
+        /// </summary>
+        /// <typeparam name="T">配置类型</typeparam>
+        /// <param name="moduleId">模块ID</param>
+        /// <returns>初始化的配置对象</returns>
+        public T CreateConfig<T>(string moduleId) where T : class, IConfig, new()
+        {
+            if (string.IsNullOrEmpty(moduleId))
             {
-                if (_instance != null)
-                    return _instance;
+                _logger.LogError("创建配置失败：模块ID不能为空");
+                throw new ArgumentException("模块ID不能为空", nameof(moduleId));
+            }
 
-                // 创建配置管理器
-                _instance = new ConfigManager();
+            try
+            {
+                // 检查是否有自定义创建器
+                if (_configCreators.TryGetValue(typeof(T), out var creator))
+                {
+                    var customCreator = creator as Func<string, T>;
+                    if (customCreator != null)
+                    {
+                        _logger.LogInformation($"使用自定义创建器创建配置 {typeof(T).Name} 模块ID: {moduleId}");
+                        return customCreator(moduleId);
+                    }
+                }
 
-                // 初始化配置
-                ConfigInitializer.InitializeAllConfigs(_instance, configFolderPath);
+                // 使用默认方式创建配置
+                var config = new T();
+                if (config.ModuleId != moduleId)
+                {
+                    _logger.LogWarning($"配置对象的ModuleId({config.ModuleId})与请求的模块ID({moduleId})不匹配");
+                }
 
-                return _instance;
+                // 应用默认值
+                config.ResetToDefault();
+
+                _logger.LogInformation($"创建配置 {typeof(T).Name} 模块ID: {moduleId}");
+                return config;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"创建配置 {typeof(T).Name} 时发生错误, 模块ID: {moduleId}");
+                throw;
             }
         }
 
         /// <summary>
-        /// 重新加载所有配置
-        /// </summary>
-        /// <param name="configFolderPath">配置文件夹路径</param>
-        /// <returns>是否成功重新加载</returns>
-        public static bool ReloadAllConfigs(string configFolderPath)
-        {
-            if (_instance == null || string.IsNullOrEmpty(configFolderPath))
-                return false;
-
-            return _instance.LoadAllConfigs(configFolderPath);
-        }
-
-        /// <summary>
-        /// 保存所有配置
-        /// </summary>
-        /// <param name="configFolderPath">配置文件夹路径</param>
-        /// <returns>是否成功保存</returns>
-        public static bool SaveAllConfigs(string configFolderPath)
-        {
-            if (_instance == null || string.IsNullOrEmpty(configFolderPath))
-                return false;
-
-            return ConfigInitializer.SaveAllConfigs(_instance, configFolderPath);
-        }
-
-        /// <summary>
-        /// 获取特定模块的配置
+        /// 使用自定义初始化逻辑创建配置对象
         /// </summary>
         /// <typeparam name="T">配置类型</typeparam>
         /// <param name="moduleId">模块ID</param>
-        /// <returns>模块配置</returns>
-        public static T GetModuleConfig<T>(string moduleId) where T : class, IConfig
+        /// <param name="initializer">初始化委托</param>
+        /// <returns>初始化的配置对象</returns>
+        public T CreateConfig<T>(string moduleId, Action<T> initializer) where T : class, IConfig, new()
         {
-            if (_instance == null || string.IsNullOrEmpty(moduleId))
-                return null;
+            if (initializer == null)
+            {
+                _logger.LogError("创建配置失败：初始化委托不能为空");
+                throw new ArgumentNullException(nameof(initializer));
+            }
 
-            return _instance.GetConfig<T>(moduleId);
+            var config = CreateConfig<T>(moduleId);
+            initializer(config);
+
+            // 验证配置
+            var (isValid, errorMessage) = config.Validate();
+            if (!isValid)
+            {
+                _logger.LogError($"配置验证失败: {errorMessage}, 模块ID: {moduleId}");
+                throw new InvalidOperationException($"配置验证失败: {errorMessage}");
+            }
+
+            return config;
         }
 
         /// <summary>
-        /// 重置特定模块的配置
+        /// 注册自定义配置创建器
         /// </summary>
-        /// <param name="moduleId">模块ID</param>
-        /// <returns>是否成功重置</returns>
-        public static bool ResetModuleConfig(string moduleId)
+        /// <typeparam name="T">配置类型</typeparam>
+        /// <param name="creator">创建器委托</param>
+        public void RegisterConfigCreator<T>(Func<string, T> creator) where T : class, IConfig
         {
-            if (_instance == null || string.IsNullOrEmpty(moduleId))
-                return false;
+            if (creator == null)
+            {
+                _logger.LogError($"注册配置创建器失败：创建器不能为空, 类型: {typeof(T).Name}");
+                throw new ArgumentNullException(nameof(creator));
+            }
 
-            return _instance.ResetConfig(moduleId);
+            _configCreators[typeof(T)] = creator;
+            _logger.LogInformation($"注册配置创建器: {typeof(T).Name}");
+        }
+
+        /// <summary>
+        /// 创建并注册配置对象
+        /// </summary>
+        /// <typeparam name="T">配置类型</typeparam>
+        /// <param name="moduleId">模块ID</param>
+        /// <returns>初始化并注册的配置对象</returns>
+        public T CreateAndRegisterConfig<T>(string moduleId) where T : class, IConfig, new()
+        {
+            var config = CreateConfig<T>(moduleId);
+
+            // 验证配置
+            var (isValid, errorMessage) = config.Validate();
+            if (!isValid)
+            {
+                _logger.LogError($"配置验证失败: {errorMessage}, 模块ID: {moduleId}");
+                throw new InvalidOperationException($"配置验证失败: {errorMessage}");
+            }
+
+            // 注册到配置管理器
+            if (_configManager.RegisterConfig(config))
+            {
+                _logger.LogInformation($"配置注册成功: {typeof(T).Name}, 模块ID: {moduleId}");
+                return config;
+            }
+            else
+            {
+                _logger.LogError($"配置注册失败: {typeof(T).Name}, 模块ID: {moduleId}");
+                throw new InvalidOperationException($"配置注册失败: {typeof(T).Name}, 模块ID: {moduleId}");
+            }
         }
     }
 }

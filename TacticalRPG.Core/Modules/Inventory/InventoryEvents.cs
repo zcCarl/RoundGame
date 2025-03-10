@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TacticalRPG.Core.Modules.Item;
 
 namespace TacticalRPG.Core.Modules.Inventory
 {

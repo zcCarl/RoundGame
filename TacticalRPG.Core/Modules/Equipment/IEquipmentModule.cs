@@ -201,5 +201,19 @@ namespace TacticalRPG.Core.Modules.Equipment
         /// <param name="key">属性键</param>
         /// <returns>属性值，如不存在则返回null</returns>
         object GetEquipmentProperty(Guid equipmentId, string key);
+
+        /// <summary>
+        /// 创建装备对应的物品模板
+        /// </summary>
+        /// <param name="equipmentId">装备ID</param>
+        /// <returns>创建的物品模板ID</returns>
+        string CreateItemTemplateFromEquipment(Guid equipmentId);
+
+        /// <summary>
+        /// 从物品ID获取装备数据
+        /// </summary>
+        /// <param name="itemId">物品ID</param>
+        /// <returns>装备数据</returns>
+        IEquipment GetEquipmentFromItem(Guid itemId);
     }
 }

@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using TacticalRPG.Core.Modules.Character;
-using TacticalRPG.Core.Modules.Equipment;
-using TacticalRPG.Core.Modules.Inventory;
+using TacticalRPG.Core.Modules.Item;
 
-namespace TacticalRPG.Implementation.Modules.Inventory
+namespace TacticalRPG.Implementation.Modules.Item
 {
     /// <summary>
     /// 物品实现类
@@ -13,7 +11,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
     {
         private readonly Dictionary<string, object> _attributes = new Dictionary<string, object>();
         private bool _isLocked = false;
-        private IEquipment _equipmentInstance = null;
+        private Guid? _equipmentId = null;
         private readonly ItemConfig _config;
 
         /// <summary>
@@ -149,12 +147,12 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 获取物品的模板ID
         /// </summary>
-        public string TemplateId => _config?.ItemId;
+        public string TemplateId => _config?.TemplateId;
 
         /// <summary>
         /// 获取物品是否为装备
         /// </summary>
-        public bool IsEquipment => Type == ItemType.Equipment && _equipmentInstance != null;
+        public bool IsEquipment => Type == ItemType.Equipment && _equipmentId.HasValue;
 
         /// <summary>
         /// 获取物品是否为消耗品
@@ -167,9 +165,9 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         public bool IsQuestItem => Type == ItemType.QuestItem;
 
         /// <summary>
-        /// 获取装备实例（如果物品是装备）
+        /// 获取装备ID（如果物品是装备）
         /// </summary>
-        public IEquipment EquipmentInstance => _equipmentInstance;
+        public Guid? EquipmentId => _equipmentId;
 
         /// <summary>
         /// 获取物品是否被锁定（不可交易/丢弃/销毁）
@@ -262,7 +260,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             CooldownGroup = source.CooldownGroup;
             UseEffect = source.UseEffect;
             EquipSlot = source.EquipSlot;
-            _equipmentInstance = source._equipmentInstance;
+            _equipmentId = source._equipmentId;
 
             // 复制属性
             foreach (var key in source._attributes.Keys)
@@ -677,10 +675,15 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 return (false, "物品不可使用");
             }
 
-            // 这里应该实现具体的使用逻辑
-            // 例如：消耗品恢复生命值、技能书学习技能等
+            if (StackSize <= 0)
+            {
+                return (false, "物品数量不足");
+            }
 
-            return (true, "物品使用成功");
+            // 物品模块不应该知道如何使用物品，只返回使用请求成功，具体效果由其他模块实现
+            // 这里仅做基本验证，减少堆叠数量
+            RemoveFromStack(1);
+            return (true, $"使用了{Name}");
         }
 
         /// <summary>
@@ -696,10 +699,13 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 return (false, "物品不可使用");
             }
 
-            // 这里应该实现具体的检查逻辑
-            // 例如：检查角色等级是否满足要求、职业是否匹配等
+            if (StackSize <= 0)
+            {
+                return (false, "物品数量不足");
+            }
 
-            return (true, "物品可以使用");
+            // 物品模块不应该知道具体的使用条件，只检查基本条件
+            return (true, "可以使用");
         }
 
         /// <summary>
@@ -807,7 +813,17 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <returns>属性值，如不存在则返回null</returns>
         public object GetProperty(string key)
         {
-            return GetAttribute(key);
+            if (string.IsNullOrEmpty(key))
+            {
+                return null;
+            }
+
+            if (_attributes.TryGetValue(key, out var value))
+            {
+                return value;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -817,7 +833,12 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <param name="value">属性值</param>
         public void SetProperty(string key, object value)
         {
-            SetAttribute(key, value);
+            if (string.IsNullOrEmpty(key))
+            {
+                return;
+            }
+
+            _attributes[key] = value;
         }
 
         /// <summary>
@@ -829,6 +850,76 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         {
             return new Item(this, amount);
         }
+
+        /// <summary>
+        /// 设置装备ID
+        /// </summary>
+        /// <param name="equipmentId">装备ID</param>
+        public void SetEquipmentId(Guid? equipmentId)
+        {
+            _equipmentId = equipmentId;
+        }
+    }
+
+    /// <summary>
+    /// 装备槽位枚举
+    /// </summary>
+    public enum EquipmentSlot
+    {
+        /// <summary>
+        /// 无
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// 主手武器
+        /// </summary>
+        MainHand = 1,
+
+        /// <summary>
+        /// 副手
+        /// </summary>
+        OffHand = 2,
+
+        /// <summary>
+        /// 头部
+        /// </summary>
+        Head = 3,
+
+        /// <summary>
+        /// 身体
+        /// </summary>
+        Body = 4,
+
+        /// <summary>
+        /// 手部
+        /// </summary>
+        Hands = 5,
+
+        /// <summary>
+        /// 腿部
+        /// </summary>
+        Legs = 6,
+
+        /// <summary>
+        /// 足部
+        /// </summary>
+        Feet = 7,
+
+        /// <summary>
+        /// 颈部
+        /// </summary>
+        Neck = 8,
+
+        /// <summary>
+        /// 戒指1
+        /// </summary>
+        Ring1 = 9,
+
+        /// <summary>
+        /// 戒指2
+        /// </summary>
+        Ring2 = 10
     }
 
     /// <summary>

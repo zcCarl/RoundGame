@@ -90,8 +90,9 @@ namespace TacticalRPG.Implementation.Framework
                 {
                     try
                     {
-                        var task = (Task)handler.DynamicInvoke(gameEvent);
-                        tasks.Add(task);
+                        var task = handler.DynamicInvoke(gameEvent);
+
+                        tasks.Add(task as Task);
                     }
                     catch (Exception ex)
                     {

@@ -2,26 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TacticalRPG.Core.Framework;
+using TacticalRPG.Core.Modules.Item;
 
 namespace TacticalRPG.Core.Modules.Inventory
 {
     /// <summary>
-    /// 物品背包模块接口，负责管理游戏中的所有物品和背包
+    /// 物品背包模块接口，负责管理游戏中的所有背包
     /// </summary>
-    public interface IInventoryModule
+    public interface IInventoryModule : IGameModule
     {
         /// <summary>
-        /// 获取物品管理器
+        /// 获取物品模块引用
         /// </summary>
-        IItemManager ItemManager { get; }
-
-        /// <summary>
-        /// 创建物品
-        /// </summary>
-        /// <param name="templateId">物品模板ID</param>
-        /// <param name="stackSize">堆叠数量</param>
-        /// <returns>创建的物品</returns>
-        IItem CreateItem(string templateId, int stackSize = 1);
+        IItemModule ItemModule { get; }
 
         /// <summary>
         /// 创建角色背包
@@ -53,17 +46,17 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <param name="templateId">物品模板ID</param>
         /// <param name="amount">数量</param>
         /// <param name="inventoryType">目标背包类型</param>
-        /// <returns>添加结果，如果成功则返回槽位索引，否则返回-1</returns>
-        int AddItemToCharacter(Guid characterId, string templateId, int amount = 1, InventoryType inventoryType = InventoryType.Normal);
+        /// <returns>添加结果，成功返回true，失败返回false</returns>
+        Task<bool> AddItemToCharacterAsync(Guid characterId, string templateId, int amount = 1, InventoryType inventoryType = InventoryType.Normal);
 
         /// <summary>
         /// 给角色添加物品
         /// </summary>
         /// <param name="characterId">角色ID</param>
-        /// <param name="item">物品实例</param>
+        /// <param name="itemId">物品ID</param>
         /// <param name="inventoryType">目标背包类型</param>
-        /// <returns>添加结果，如果成功则返回槽位索引，否则返回-1</returns>
-        int AddItemToCharacter(Guid characterId, IItem item, InventoryType inventoryType = InventoryType.Normal);
+        /// <returns>添加结果，成功返回true，失败返回false</returns>
+        Task<bool> AddItemToCharacterAsync(Guid characterId, Guid itemId, InventoryType inventoryType = InventoryType.Normal);
 
         /// <summary>
         /// 从角色背包移除物品
@@ -84,54 +77,63 @@ namespace TacticalRPG.Core.Modules.Inventory
         Task<bool> CharacterHasItemAsync(Guid characterId, string templateId, int amount = 1);
 
         /// <summary>
-        /// 角色使用物品
+        /// 检查角色是否拥有足够数量的物品(按物品实例ID)
         /// </summary>
         /// <param name="characterId">角色ID</param>
-        /// <param name="itemId">物品ID</param>
-        /// <param name="targetId">目标ID</param>
-        /// <returns>使用结果</returns>
-        Task<(bool success, string message)> UseItemAsync(Guid characterId, Guid itemId, Guid? targetId = null);
+        /// <param name="itemId">物品实例ID</param>
+        /// <param name="count">数量</param>
+        /// <returns>是否拥有足够数量</returns>
+        Task<bool> HasEnoughItemsByIdAsync(Guid characterId, Guid itemId, int count);
 
         /// <summary>
-        /// 创建掉落物
+        /// 检查角色是否拥有足够数量的物品(按物品模板ID)
         /// </summary>
-        /// <param name="position">位置坐标</param>
-        /// <param name="items">物品列表</param>
-        /// <returns>掉落物ID</returns>
-        Task<Guid> CreateDropAsync((int x, int y) position, IReadOnlyList<IItem> items);
+        /// <param name="characterId">角色ID</param>
+        /// <param name="templateId">物品模板ID</param>
+        /// <param name="count">数量</param>
+        /// <returns>是否拥有足够数量</returns>
+        Task<bool> HasEnoughItemsByTemplateIdAsync(Guid characterId, string templateId, int count);
 
         /// <summary>
-        /// the loot drop
+        /// 获取物品实例ID
         /// </summary>
-        /// <param name="dropId">掉落物ID</param>
-        /// <param name="characterId">拾取角色ID</param>
-        /// <returns>拾取结果</returns>
-        Task<(bool success, string message)> PickupDropAsync(Guid dropId, Guid characterId);
+        /// <param name="characterId">角色ID</param>
+        /// <param name="itemId">物品实例ID</param>
+        /// <returns>物品实例ID</returns>
+        Task<Guid> GetItemAsync(Guid characterId, Guid itemId);
 
         /// <summary>
-        /// 注册物品模板
+        /// 根据模板ID获取物品实例ID
         /// </summary>
-        /// <param name="templateId">模板ID</param>
-        /// <param name="itemTemplate">物品模板</param>
-        void RegisterItemTemplate(string templateId, IItem itemTemplate);
+        /// <param name="characterId">角色ID</param>
+        /// <param name="templateId">物品模板ID</param>
+        /// <returns>物品实例ID</returns>
+        Task<Guid> GetItemByTemplateIdAsync(Guid characterId, string templateId);
 
         /// <summary>
-        /// 批量注册物品模板
+        /// 背包管理相关API
         /// </summary>
-        /// <param name="templates">模板字典</param>
-        void RegisterItemTemplates(IDictionary<string, IItem> templates);
+        Task<Guid> CreateInventoryAsync(Guid ownerId, InventoryType type, int capacity);
+        Task<bool> AddItemAsync(Guid inventoryId, Guid itemId, int? slotIndex = null);
+        Task<bool> RemoveItemAsync(Guid inventoryId, Guid itemId, int amount = 1);
+        Task<IReadOnlyList<Guid>> GetInventoryItemsAsync(Guid inventoryId);
+        Task<bool> HasSpaceForItemAsync(Guid inventoryId, Guid itemId);
+        Task<bool> TransferItemAsync(Guid sourceInventoryId, Guid targetInventoryId, Guid itemId);
+        Task<bool> MoveItemAsync(Guid inventoryId, int fromSlotIndex, int toSlotIndex);
+        Task<bool> SwapItemsAsync(Guid inventoryId, int slotIndex1, int slotIndex2);
+        Task<bool> SortInventoryAsync(Guid inventoryId);
 
         /// <summary>
-        /// 加载物品数据
+        /// 加载背包数据
         /// </summary>
-        /// <param name="data">物品数据</param>
+        /// <param name="data">背包数据</param>
         /// <returns>加载结果</returns>
-        Task<bool> LoadItemDataAsync(string data);
+        Task<bool> LoadInventoryDataAsync(string data);
 
         /// <summary>
-        /// 保存物品数据
+        /// 保存背包数据
         /// </summary>
         /// <returns>保存的数据</returns>
-        Task<string> SaveItemDataAsync();
+        Task<string> SaveInventoryDataAsync();
     }
 }

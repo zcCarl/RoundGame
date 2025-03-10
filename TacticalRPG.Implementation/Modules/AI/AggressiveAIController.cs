@@ -78,7 +78,7 @@ namespace TacticalRPG.Implementation.Modules.AI
                 {
                     // 对于进攻型AI，优先选择可攻击敌人数量最多的位置
                     var bestTacticalPosition = evaluation.TacticalPositions
-                        .OrderByDescending(p => p.AttackableEnemiesCount)
+                        .OrderByDescending(p => p.AttackableEnemies)
                         .ThenByDescending(p => p.Value)
                         .First();
                     actions.Add(AIAction.CreateMoveAction(bestTacticalPosition.X, bestTacticalPosition.Y, 60));

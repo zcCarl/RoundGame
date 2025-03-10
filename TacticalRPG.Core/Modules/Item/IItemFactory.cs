@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using TacticalRPG.Core.Modules.Character;
-using TacticalRPG.Core.Modules.Equipment;
-using TacticalRPG.Core.Modules.Skill;
 
-namespace TacticalRPG.Core.Modules.Inventory
+
+namespace TacticalRPG.Core.Modules.Item
 {
     /// <summary>
     /// 定义物品工厂的接口，用于创建各种类型的物品
@@ -36,13 +32,6 @@ namespace TacticalRPG.Core.Modules.Inventory
             int stackSize = 1);
 
         /// <summary>
-        /// 从装备创建物品
-        /// </summary>
-        /// <param name="equipment">装备实例</param>
-        /// <returns>创建的物品实例</returns>
-        IItem CreateFromEquipment(IEquipment equipment);
-
-        /// <summary>
         /// 创建消耗品物品
         /// </summary>
         /// <param name="name">物品名称</param>
@@ -59,7 +48,7 @@ namespace TacticalRPG.Core.Modules.Inventory
             string name,
             string description,
             ItemRarity rarity,
-            EquipmentStatType effectType,
+            string effectType,
             float effectValue,
             int maxStackSize = 99,
             float weight = 0.1f,

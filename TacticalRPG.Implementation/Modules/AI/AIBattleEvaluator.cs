@@ -340,7 +340,7 @@ namespace TacticalRPG.Implementation.Modules.AI
 
             foreach (var skillId in skillIds)
             {
-                ISkill skill = character.Character.GetSkill(skillId);
+                ISkill skill =
                 if (skill == null)
                     continue;
 

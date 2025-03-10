@@ -66,6 +66,7 @@ namespace TacticalRPG.Implementation.Framework
             services.AddTransient<TacticalAIController>();
 
             // 注册物品管理
+            services.AddSingleton<IItemConfigManager, ItemConfigManager>();
             services.AddSingleton<IItemManager, ItemManager>();
             services.AddSingleton<IItemFactory, ItemFactory>();
 

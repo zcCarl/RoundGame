@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using TacticalRPG.Core.Modules.Character;
 using TacticalRPG.Core.Modules.Config;
 using TacticalRPG.Core.Modules.Inventory;
@@ -9,8 +11,9 @@ using TacticalRPG.Implementation.Modules.Inventory;
 namespace TacticalRPG.Implementation.Modules.Config
 {
     /// <summary>
-    /// 配置初始化器，用于注册和初始化各模块配置
+    /// 配置初始化器 - 此类已过时，请使用ConfigModule代替
     /// </summary>
+    [Obsolete("此类已过时，请使用ConfigModule代替，它提供更完整的生命周期管理")]
     public static class ConfigInitializer
     {
         /// <summary>

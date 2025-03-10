@@ -301,6 +301,7 @@ namespace TacticalRPG.Implementation.Modules.Character
         {
             switch (Class)
             {
+                // 战士
                 case CharacterClass.Warrior:
                     MaxHP += 50;
                     MaxMP -= 20;
@@ -308,6 +309,7 @@ namespace TacticalRPG.Implementation.Modules.Character
                     Constitution += 3;
                     Intelligence -= 2;
                     break;
+                // 法师
                 case CharacterClass.Mage:
                     MaxHP -= 20;
                     MaxMP += 50;
@@ -315,17 +317,20 @@ namespace TacticalRPG.Implementation.Modules.Character
                     Strength -= 2;
                     Constitution -= 1;
                     break;
+                // 弓箭手
                 case CharacterClass.Archer:
                     Agility += 5;
                     Luck += 2;
                     MaxHP -= 10;
                     break;
-                case CharacterClass.Priest:
+                // 牧师
+                case CharacterClass.Cleric:
                     MaxMP += 30;
                     Intelligence += 3;
                     Constitution += 1;
                     MaxHP -= 10;
                     break;
+                // 骑士
                 case CharacterClass.Knight:
                     MaxHP += 30;
                     Constitution += 5;
@@ -369,7 +374,7 @@ namespace TacticalRPG.Implementation.Modules.Character
                     if (Level % 3 == 0) Luck += 1;
                     if (Level % 5 == 0) Constitution += 1;
                     break;
-                case CharacterClass.Priest:
+                case CharacterClass.Cleric:
                     Intelligence += 2;
                     MaxMP += 5;
                     if (Level % 3 == 0) Constitution += 1;

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
-using TacticalRPG.Core.Modules.Character;
-using TacticalRPG.Core.Modules.Equipment;
+// 移除对其他模块的引用
+// using TacticalRPG.Core.Modules.Character;
+// using TacticalRPG.Core.Modules.Equipment;
 
-namespace TacticalRPG.Core.Modules.Inventory
+namespace TacticalRPG.Core.Modules.Item
 {
     /// <summary>
-    /// 定义游戏物品的接口
+    /// 物品接口，定义物品基本属性和行为
     /// </summary>
     public interface IItem
     {
@@ -14,11 +15,6 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// 获取物品的唯一标识符
         /// </summary>
         Guid Id { get; }
-
-        /// <summary>
-        /// 获取物品的模板标识符
-        /// </summary>
-        string TemplateId { get; }
 
         /// <summary>
         /// 获取物品的名称
@@ -61,14 +57,33 @@ namespace TacticalRPG.Core.Modules.Inventory
         int StackSize { get; set; }
 
         /// <summary>
-        /// 获取物品的重量（每单位）
+        /// 获取物品的重量
         /// </summary>
         float Weight { get; }
 
         /// <summary>
-        /// 获取物品的价值（游戏内货币，每单位）
+        /// 获取物品的价值
         /// </summary>
         int Value { get; }
+
+        /// <summary>
+        /// 获取物品的模板ID
+        /// </summary>
+        Guid TemplateId { get; }
+
+        /// <summary>
+        /// 获取自定义属性
+        /// </summary>
+        /// <param name="key">属性名</param>
+        /// <returns>属性值</returns>
+        object GetProperty(string key);
+
+        /// <summary>
+        /// 设置自定义属性
+        /// </summary>
+        /// <param name="key">属性名</param>
+        /// <param name="value">属性值</param>
+        void SetProperty(string key, object value);
 
         /// <summary>
         /// 获取物品是否可使用
@@ -91,9 +106,9 @@ namespace TacticalRPG.Core.Modules.Inventory
         bool IsQuestItem { get; }
 
         /// <summary>
-        /// 获取装备实例（如果物品是装备）
+        /// 获取装备ID（如果物品是装备）
         /// </summary>
-        IEquipment EquipmentInstance { get; }
+        Guid? EquipmentId { get; }
 
         /// <summary>
         /// 获取物品是否被锁定（不可交易/丢弃/销毁）
@@ -149,20 +164,6 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// </summary>
         /// <param name="locked">是否锁定</param>
         void SetLocked(bool locked);
-
-        /// <summary>
-        /// 获取物品的自定义属性
-        /// </summary>
-        /// <param name="key">属性键</param>
-        /// <returns>属性值，如不存在则返回null</returns>
-        object GetProperty(string key);
-
-        /// <summary>
-        /// 设置物品的自定义属性
-        /// </summary>
-        /// <param name="key">属性键</param>
-        /// <param name="value">属性值</param>
-        void SetProperty(string key, object value);
 
         /// <summary>
         /// 创建物品的副本

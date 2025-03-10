@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using TacticalRPG.Core.Modules.Config;
+using Microsoft.Extensions.Logging;
 
 namespace TacticalRPG.Implementation.Modules.Config
 {
@@ -14,6 +15,8 @@ namespace TacticalRPG.Implementation.Modules.Config
     {
         private readonly Dictionary<string, IConfig> _configs = new Dictionary<string, IConfig>();
         private readonly object _lockObj = new object();
+        private readonly ILogger<ConfigManager> _logger;
+        private readonly IConfigCache _configCache;
 
         /// <summary>
         /// 配置变更事件
@@ -23,8 +26,17 @@ namespace TacticalRPG.Implementation.Modules.Config
         /// <summary>
         /// 构造函数
         /// </summary>
-        public ConfigManager()
+        /// <param name="logger">日志记录器</param>
+        /// <param name="configCache">配置缓存</param>
+        public ConfigManager(ILogger<ConfigManager> logger, IConfigCache configCache = null)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _configCache = configCache; // 允许为null，表示不使用缓存
+
+            if (_configCache != null)
+            {
+                _logger.LogInformation("配置管理器已启用缓存");
+            }
         }
 
         /// <summary>
@@ -34,15 +46,50 @@ namespace TacticalRPG.Implementation.Modules.Config
         /// <returns>是否成功注册</returns>
         public bool RegisterConfig(IConfig config)
         {
+            return RegisterConfig(config, false);
+        }
+
+        /// <summary>
+        /// 注册配置，并进行验证
+        /// </summary>
+        /// <param name="config">配置对象</param>
+        /// <param name="skipValidation">是否跳过验证</param>
+        /// <returns>是否成功注册</returns>
+        public bool RegisterConfig(IConfig config, bool skipValidation = false)
+        {
             if (config == null)
                 return false;
 
+            string moduleId = config.ModuleId;
+            if (string.IsNullOrEmpty(moduleId))
+                return false;
+
+            // 验证配置
+            if (!skipValidation)
+            {
+                var (isValid, errorMessage) = config.Validate();
+                if (!isValid)
+                {
+                    _logger.LogError($"配置验证失败: {errorMessage}, 模块ID: {moduleId}");
+                    return false;
+                }
+            }
+
             lock (_lockObj)
             {
-                if (_configs.ContainsKey(config.ModuleId))
-                    return false;
+                // 检查是否存在同名配置
+                if (_configs.ContainsKey(moduleId))
+                {
+                    _logger.LogWarning($"配置已存在，将被覆盖. 模块ID: {moduleId}");
+                }
 
-                _configs[config.ModuleId] = config;
+                // 注册配置
+                _configs[moduleId] = config;
+                _logger.LogInformation($"注册配置成功. 模块ID: {moduleId}");
+
+                // 触发配置变更事件
+                OnConfigChanged(moduleId, config);
+
                 return true;
             }
         }
@@ -57,6 +104,16 @@ namespace TacticalRPG.Implementation.Modules.Config
         {
             if (string.IsNullOrEmpty(moduleId))
                 return null;
+
+            // 如果启用了缓存，首先尝试从缓存获取
+            if (_configCache != null)
+            {
+                var cachedConfig = _configCache.GetConfig<T>(moduleId);
+                if (cachedConfig != null)
+                {
+                    return cachedConfig;
+                }
+            }
 
             lock (_lockObj)
             {
@@ -93,7 +150,7 @@ namespace TacticalRPG.Implementation.Modules.Config
                 _configs[config.ModuleId] = config;
 
                 // 触发配置变更事件
-                ConfigChanged?.Invoke(config.ModuleId, config);
+                OnConfigChanged(config.ModuleId, config);
 
                 return true;
             }
@@ -193,7 +250,7 @@ namespace TacticalRPG.Implementation.Modules.Config
                     _configs[moduleId] = loadedConfig;
 
                     // 触发配置变更事件
-                    ConfigChanged?.Invoke(moduleId, loadedConfig);
+                    OnConfigChanged(moduleId, loadedConfig);
 
                     return true;
                 }
@@ -259,7 +316,7 @@ namespace TacticalRPG.Implementation.Modules.Config
                 config.ResetToDefault();
 
                 // 触发配置变更事件
-                ConfigChanged?.Invoke(moduleId, config);
+                OnConfigChanged(moduleId, config);
 
                 return true;
             }
@@ -274,6 +331,99 @@ namespace TacticalRPG.Implementation.Modules.Config
             lock (_lockObj)
             {
                 return _configs.Keys.ToList();
+            }
+        }
+
+        /// <summary>
+        /// 验证配置是否有效
+        /// </summary>
+        /// <param name="moduleId">模块ID</param>
+        /// <returns>验证结果，包含是否有效和错误信息</returns>
+        public (bool IsValid, string ErrorMessage) ValidateConfig(string moduleId)
+        {
+            if (string.IsNullOrEmpty(moduleId))
+                return (false, "模块ID不能为空");
+
+            lock (_lockObj)
+            {
+                if (!_configs.TryGetValue(moduleId, out var config))
+                    return (false, $"找不到模块 {moduleId} 的配置");
+
+                try
+                {
+                    var result = config.Validate();
+                    if (!result.IsValid)
+                    {
+                        _logger.LogWarning($"配置验证失败. 模块ID: {moduleId}, 错误: {result.ErrorMessage}");
+                    }
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"验证配置时发生异常. 模块ID: {moduleId}");
+                    return (false, $"验证异常: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 验证所有配置
+        /// </summary>
+        /// <returns>验证结果，包含无效配置的模块ID和错误信息</returns>
+        public Dictionary<string, string> ValidateAllConfigs()
+        {
+            var invalidConfigs = new Dictionary<string, string>();
+
+            lock (_lockObj)
+            {
+                foreach (var kvp in _configs)
+                {
+                    var moduleId = kvp.Key;
+                    var config = kvp.Value;
+
+                    try
+                    {
+                        var (isValid, errorMessage) = config.Validate();
+                        if (!isValid)
+                        {
+                            invalidConfigs.Add(moduleId, errorMessage);
+                            _logger.LogWarning($"配置验证失败. 模块ID: {moduleId}, 错误: {errorMessage}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        invalidConfigs.Add(moduleId, $"验证异常: {ex.Message}");
+                        _logger.LogError(ex, $"验证配置时发生异常. 模块ID: {moduleId}");
+                    }
+                }
+            }
+
+            if (invalidConfigs.Count > 0)
+            {
+                _logger.LogWarning($"共有 {invalidConfigs.Count} 个配置验证失败");
+            }
+            else
+            {
+                _logger.LogInformation("所有配置验证通过");
+            }
+
+            return invalidConfigs;
+        }
+
+        /// <summary>
+        /// 配置变更事件触发器
+        /// </summary>
+        /// <param name="moduleId">模块ID</param>
+        /// <param name="config">配置对象</param>
+        protected virtual void OnConfigChanged(string moduleId, IConfig config)
+        {
+            ConfigChanged?.Invoke(moduleId, config);
+
+            // 如果启用了缓存，更新缓存
+            if (_configCache != null)
+            {
+                _configCache.RemoveConfig(moduleId);
+                _logger.LogDebug($"已从缓存中移除变更的配置: {moduleId}");
             }
         }
     }

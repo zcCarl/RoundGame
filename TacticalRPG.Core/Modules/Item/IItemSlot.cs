@@ -1,6 +1,6 @@
 using System;
 
-namespace TacticalRPG.Core.Modules.Inventory
+namespace TacticalRPG.Core.Modules.Item
 {
     /// <summary>
     /// 物品槽接口，定义物品槽的基本属性和方法

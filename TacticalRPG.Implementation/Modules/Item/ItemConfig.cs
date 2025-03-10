@@ -4,9 +4,10 @@ using TacticalRPG.Core.Modules.Character;
 using TacticalRPG.Core.Modules.Config;
 using TacticalRPG.Core.Modules.Equipment;
 using TacticalRPG.Core.Modules.Inventory;
+using TacticalRPG.Core.Modules.Item;
 using TacticalRPG.Implementation.Modules.Config;
 
-namespace TacticalRPG.Implementation.Modules.Inventory
+namespace TacticalRPG.Implementation.Modules.Item
 {
     /// <summary>
     /// 物品配置类，用于存储物品的基本配置信息
@@ -14,6 +15,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
     public class ItemConfig : ConfigBase
     {
         // 配置键名
+        public const string KEY_ID = "Id";
         private const string KEY_NAME = "Name";
         private const string KEY_DESCRIPTION = "Description";
         private const string KEY_TYPE = "Type";
@@ -55,9 +57,16 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         public static string GetModuleId(string itemId) => $"{MODULE_ID_PREFIX}.{itemId}";
 
         /// <summary>
+        /// 获取物品模板ID
+        /// </summary>
+        /// <returns>模板ID</returns>
+        public string TemplateId => GetValue<string>(KEY_ID, "");
+
+        /// <summary>
         /// 获取物品名称
         /// </summary>
         public string Name => GetValue<string>(KEY_NAME, "未命名物品");
+        public void SetTemplateId(string value) => SetValue(KEY_ID, value);
 
         /// <summary>
         /// 设置物品名称
@@ -79,7 +88,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 获取物品类型
         /// </summary>
-        public ItemType Type => GetValue<ItemType>(KEY_TYPE, ItemType.Misc);
+        public ItemType Type => GetValue<ItemType>(KEY_TYPE, ItemType.None);
 
         /// <summary>
         /// 设置物品类型
@@ -372,9 +381,10 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// </summary>
         protected override void InitDefaultValues()
         {
+            SetValue(KEY_ID, Guid.NewGuid().ToString());
             SetValue(KEY_NAME, "未命名物品");
             SetValue(KEY_DESCRIPTION, "");
-            SetValue(KEY_TYPE, ItemType.Misc);
+            SetValue(KEY_TYPE, ItemType.None);
             SetValue(KEY_RARITY, ItemRarity.Common);
             SetValue(KEY_ICON_PATH, "");
             SetValue(KEY_IS_STACKABLE, false);
@@ -422,9 +432,29 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             return base.Validate();
         }
 
-        internal void SetCustomProperty(string v1, string v2)
+        public T GetCustomProperty<T>(string key)
         {
-            throw new NotImplementedException();
+            return GetValue<T>(key);
+        }
+
+        public object GetCustomProperty(string key)
+        {
+            return GetValue<object>(key);
+        }
+
+        public void SetCustomProperty<T>(string key, T value)
+        {
+            SetValue(key, value);
+        }
+
+        public void SetCustomProperty(string key, object value)
+        {
+            SetValue(key, value);
+        }
+
+        public IEnumerable<string> GetCustomPropertyKeys()
+        {
+            return ConfigItems.Keys;
         }
     }
 }

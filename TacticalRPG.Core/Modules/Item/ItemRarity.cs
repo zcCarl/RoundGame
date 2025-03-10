@@ -1,6 +1,6 @@
 using System;
 
-namespace TacticalRPG.Core.Modules.Inventory
+namespace TacticalRPG.Core.Modules.Item
 {
     /// <summary>
     /// 定义物品的稀有度级别

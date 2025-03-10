@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace TacticalRPG.Core.Modules.Inventory
+namespace TacticalRPG.Core.Modules.Drop
 {
     /// <summary>
     /// 掉落物管理器接口
@@ -9,7 +10,7 @@ namespace TacticalRPG.Core.Modules.Inventory
     public interface IDropManager
     {
         /// <summary>
-        /// 当前游戏世界中的所有掉落物
+        /// 获取当前游戏世界中的所有掉落物
         /// </summary>
         IReadOnlyDictionary<Guid, IDrop> ActiveDrops { get; }
 
@@ -18,30 +19,30 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// </summary>
         /// <param name="x">X坐标</param>
         /// <param name="y">Y坐标</param>
-        /// <param name="items">物品列表</param>
+        /// <param name="itemIds">物品ID列表</param>
         /// <param name="existDuration">存在时间（秒），0表示永久存在</param>
         /// <returns>创建的掉落物</returns>
-        IDrop CreateDrop(int x, int y, IReadOnlyList<IItem> items, int existDuration = 60);
+        IDrop CreateDrop(int x, int y, IReadOnlyList<Guid> itemIds, int existDuration = 60);
 
         /// <summary>
         /// 创建掉落物
         /// </summary>
         /// <param name="x">X坐标</param>
         /// <param name="y">Y坐标</param>
-        /// <param name="item">物品</param>
+        /// <param name="itemId">物品ID</param>
         /// <param name="existDuration">存在时间（秒），0表示永久存在</param>
         /// <returns>创建的掉落物</returns>
-        IDrop CreateDrop(int x, int y, IItem item, int existDuration = 60);
+        IDrop CreateDrop(int x, int y, Guid itemId, int existDuration = 60);
 
         /// <summary>
         /// 创建随机掉落物
         /// </summary>
         /// <param name="x">X坐标</param>
         /// <param name="y">Y坐标</param>
-        /// <param name="lootTable">掉落表ID</param>
+        /// <param name="lootTableId">掉落表ID</param>
         /// <param name="existDuration">存在时间（秒），0表示永久存在</param>
         /// <returns>创建的掉落物</returns>
-        IDrop CreateRandomDrop(int x, int y, string lootTable, int existDuration = 60);
+        IDrop CreateRandomDrop(int x, int y, string lootTableId, int existDuration = 60);
 
         /// <summary>
         /// 移除掉落物
@@ -56,7 +57,7 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <param name="dropId">掉落物ID</param>
         /// <param name="characterId">角色ID</param>
         /// <returns>拾取结果</returns>
-        (bool success, string message, IReadOnlyList<IItem> items) PickupDrop(Guid dropId, Guid characterId);
+        (bool success, string message, IReadOnlyList<Guid> itemIds) PickupDrop(Guid dropId, Guid characterId);
 
         /// <summary>
         /// 获取掉落物
@@ -107,5 +108,18 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <param name="lootTableId">掉落表ID</param>
         /// <returns>掉落表</returns>
         Dictionary<string, int> GetLootTable(string lootTableId);
+
+        /// <summary>
+        /// 加载掉落数据
+        /// </summary>
+        /// <param name="data">掉落数据</param>
+        /// <returns>加载结果</returns>
+        Task<bool> LoadDropDataAsync(string data);
+
+        /// <summary>
+        /// 保存掉落数据
+        /// </summary>
+        /// <returns>保存的数据</returns>
+        Task<string> SaveDropDataAsync();
     }
 }

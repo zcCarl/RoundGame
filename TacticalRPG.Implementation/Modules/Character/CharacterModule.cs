@@ -115,11 +115,11 @@ namespace TacticalRPG.Implementation.Modules.Character
             Console.WriteLine("角色模块异步初始化");
 
             // 注册事件处理程序
-            _eventManager.RegisterEvent<CharacterCreatedEventArgs>(OnCharacterCreated);
-            _eventManager.RegisterEvent<CharacterDeletedEventArgs>(OnCharacterDeleted);
-            _eventManager.RegisterEvent<CharacterLevelUpEventArgs>(OnCharacterLevelUp);
-            _eventManager.RegisterEvent<CharacterSkillLearnedEventArgs>(OnCharacterSkillLearned);
-            _eventManager.RegisterEvent<CharacterSkillForgottenEventArgs>(OnCharacterSkillForgotten);
+            _eventManager.Subscribe<CharacterCreatedEventArgs>(OnCharacterCreated);
+            _eventManager.Subscribe<CharacterDeletedEventArgs>(OnCharacterDeleted);
+            _eventManager.Subscribe<CharacterLevelUpEventArgs>(OnCharacterLevelUp);
+            _eventManager.Subscribe<CharacterSkillLearnedEventArgs>(OnCharacterSkillLearned);
+            _eventManager.Subscribe<CharacterSkillForgottenEventArgs>(OnCharacterSkillForgotten);
 
             return Task.CompletedTask;
         }
@@ -132,11 +132,11 @@ namespace TacticalRPG.Implementation.Modules.Character
             Console.WriteLine("角色模块关闭");
 
             // 移除事件处理程序
-            _eventManager.UnregisterEvent<CharacterCreatedEventArgs>(OnCharacterCreated);
-            _eventManager.UnregisterEvent<CharacterDeletedEventArgs>(OnCharacterDeleted);
-            _eventManager.UnregisterEvent<CharacterLevelUpEventArgs>(OnCharacterLevelUp);
-            _eventManager.UnregisterEvent<CharacterSkillLearnedEventArgs>(OnCharacterSkillLearned);
-            _eventManager.UnregisterEvent<CharacterSkillForgottenEventArgs>(OnCharacterSkillForgotten);
+            _eventManager.Unsubscribe<CharacterCreatedEventArgs>(OnCharacterCreated);
+            _eventManager.Unsubscribe<CharacterDeletedEventArgs>(OnCharacterDeleted);
+            _eventManager.Unsubscribe<CharacterLevelUpEventArgs>(OnCharacterLevelUp);
+            _eventManager.Unsubscribe<CharacterSkillLearnedEventArgs>(OnCharacterSkillLearned);
+            _eventManager.Unsubscribe<CharacterSkillForgottenEventArgs>(OnCharacterSkillForgotten);
 
             return Task.CompletedTask;
         }
@@ -218,7 +218,7 @@ namespace TacticalRPG.Implementation.Modules.Character
             _characterSkills.Remove(characterId);
 
             // 触发角色删除事件
-            await _eventManager.RaiseEventAsync(new CharacterDeletedEventArgs(character));
+            await _eventManager.PublishAsync(new CharacterDeletedEventArgs(character));
 
             return true;
         }
@@ -255,7 +255,7 @@ namespace TacticalRPG.Implementation.Modules.Character
                 }
 
                 // 触发技能学习事件
-                await _eventManager.RaiseEventAsync(new CharacterSkillLearnedEventArgs(character, skill));
+                await _eventManager.PublishAsync(new CharacterSkillLearnedEventArgs(character, skill));
                 return true;
             }
 
@@ -285,7 +285,7 @@ namespace TacticalRPG.Implementation.Modules.Character
                 }
 
                 // 触发技能遗忘事件
-                await _eventManager.RaiseEventAsync(new CharacterSkillForgottenEventArgs(character, skill));
+                await _eventManager.PublishAsync(new CharacterSkillForgottenEventArgs(character, skill));
                 return true;
             }
 
@@ -328,12 +328,12 @@ namespace TacticalRPG.Implementation.Modules.Character
                 return false;
 
             // 检查物品是否存在及是否是装备
-            IItem item = _inventoryModule.GetItem(itemId);
+            IItem item = await _inventoryModule.GetItemAsync(characterId, itemId);
             if (item == null || item.Type != ItemType.Equipment)
                 return false;
 
             // 检查是否存在于玩家的库存中
-            if (!_inventoryModule.HasItem(characterId, itemId))
+            if (!await _inventoryModule.HasEnoughItemsByIdAsync(characterId, itemId, 1))
                 return false;
 
             // 如果原来有装备，需要先卸下
@@ -410,7 +410,7 @@ namespace TacticalRPG.Implementation.Modules.Character
             if (character.LevelUp())
             {
                 // 触发角色升级事件
-                await _eventManager.RaiseEventAsync(new CharacterLevelUpEventArgs(character, oldLevel, character.Level));
+                await _eventManager.PublishAsync(new CharacterLevelUpEventArgs(character, oldLevel, character.Level));
                 return true;
             }
 
@@ -624,7 +624,7 @@ namespace TacticalRPG.Implementation.Modules.Character
     /// <summary>
     /// 角色创建事件参数
     /// </summary>
-    public class CharacterCreatedEventArgs : EventArgs
+    public class CharacterCreatedEventArgs : GameEvent
     {
         public ICharacter Character { get; }
 
@@ -637,7 +637,7 @@ namespace TacticalRPG.Implementation.Modules.Character
     /// <summary>
     /// 角色删除事件参数
     /// </summary>
-    public class CharacterDeletedEventArgs : EventArgs
+    public class CharacterDeletedEventArgs : GameEvent
     {
         public ICharacter Character { get; }
 
@@ -650,7 +650,7 @@ namespace TacticalRPG.Implementation.Modules.Character
     /// <summary>
     /// 角色升级事件参数
     /// </summary>
-    public class CharacterLevelUpEventArgs : EventArgs
+    public class CharacterLevelUpEventArgs : GameEvent
     {
         public ICharacter Character { get; }
         public int OldLevel { get; }
@@ -667,7 +667,7 @@ namespace TacticalRPG.Implementation.Modules.Character
     /// <summary>
     /// 角色学习技能事件参数
     /// </summary>
-    public class CharacterSkillLearnedEventArgs : EventArgs
+    public class CharacterSkillLearnedEventArgs : GameEvent
     {
         public ICharacter Character { get; }
         public ISkill Skill { get; }
@@ -682,7 +682,7 @@ namespace TacticalRPG.Implementation.Modules.Character
     /// <summary>
     /// 角色遗忘技能事件参数
     /// </summary>
-    public class CharacterSkillForgottenEventArgs : EventArgs
+    public class CharacterSkillForgottenEventArgs : GameEvent
     {
         public ICharacter Character { get; }
         public ISkill Skill { get; }

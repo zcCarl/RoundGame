@@ -8,52 +8,52 @@ namespace TacticalRPG.Core.Modules.Character
         /// <summary>
         /// 物理攻击力
         /// </summary>
-        public int PhysicalAttack { get; }
+        public float PhysicalAttack { get; }
 
         /// <summary>
         /// 魔法攻击力
         /// </summary>
-        public int MagicAttack { get; }
+        public float MagicAttack { get; }
 
         /// <summary>
         /// 物理防御力
         /// </summary>
-        public int PhysicalDefense { get; }
+        public float PhysicalDefense { get; }
 
         /// <summary>
         /// 魔法防御力
         /// </summary>
-        public int MagicDefense { get; }
+        public float MagicDefense { get; }
 
         /// <summary>
         /// 命中率
         /// </summary>
-        public int HitRate { get; }
+        public float HitRate { get; }
 
         /// <summary>
         /// 闪避率
         /// </summary>
-        public int EvasionRate { get; }
+        public float EvasionRate { get; }
 
         /// <summary>
         /// 暴击率
         /// </summary>
-        public int CriticalRate { get; }
+        public float CriticalRate { get; }
 
         /// <summary>
         /// 暴击伤害倍率
         /// </summary>
-        public double CriticalDamage { get; }
+        public float CriticalDamage { get; }
 
         /// <summary>
         /// 移动力
         /// </summary>
-        public int Movement { get; }
+        public float Movement { get; }
 
         /// <summary>
         /// 攻击范围
         /// </summary>
-        public int AttackRange { get; }
+        public float AttackRange { get; }
 
         /// <summary>
         /// 构造函数
@@ -69,16 +69,16 @@ namespace TacticalRPG.Core.Modules.Character
         /// <param name="movement">移动力</param>
         /// <param name="attackRange">攻击范围</param>
         public CharacterCombatStats(
-            int physicalAttack,
+            float physicalAttack,
             int magicAttack,
-            int physicalDefense,
-            int magicDefense,
-            int hitRate,
-            int evasionRate,
-            int criticalRate,
-            double criticalDamage,
-            int movement,
-            int attackRange)
+            float physicalDefense,
+            float magicDefense,
+            float hitRate,
+            float evasionRate,
+            float criticalRate,
+            float criticalDamage,
+            float movement,
+            float attackRange)
         {
             PhysicalAttack = physicalAttack;
             MagicAttack = magicAttack;

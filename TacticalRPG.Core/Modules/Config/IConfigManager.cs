@@ -84,5 +84,26 @@ namespace TacticalRPG.Core.Modules.Config
         /// </summary>
         /// <returns>模块ID列表</returns>
         IReadOnlyList<string> GetAllConfigModuleIds();
+
+        /// <summary>
+        /// 验证配置是否有效
+        /// </summary>
+        /// <param name="moduleId">模块ID</param>
+        /// <returns>验证结果，包含是否有效和错误信息</returns>
+        (bool IsValid, string ErrorMessage) ValidateConfig(string moduleId);
+
+        /// <summary>
+        /// 验证所有配置
+        /// </summary>
+        /// <returns>验证结果，包含无效配置的模块ID和错误信息</returns>
+        Dictionary<string, string> ValidateAllConfigs();
+
+        /// <summary>
+        /// 注册配置，并进行验证
+        /// </summary>
+        /// <param name="config">配置对象</param>
+        /// <param name="skipValidation">是否跳过验证</param>
+        /// <returns>是否成功注册</returns>
+        bool RegisterConfig(IConfig config, bool skipValidation = false);
     }
 }

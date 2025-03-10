@@ -4,6 +4,7 @@ using System.Linq;
 using TacticalRPG.Core.Modules.Inventory;
 using TacticalRPG.Implementation.Modules.Inventory.SortStrategies;
 using TacticalRPG.Core.Modules.Config;
+using TacticalRPG.Core.Modules.Item;
 
 namespace TacticalRPG.Implementation.Modules.Inventory
 {
@@ -107,7 +108,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 获取库存类型
         /// </summary>
-        public string InventoryType { get; private set; }
+        public InventoryType InventoryType { get; private set; }
 
         /// <summary>
         /// 构造一个新的背包实例
@@ -122,7 +123,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         {
             Id = id;
             OwnerId = ownerId;
-            InventoryType = inventoryType.ToString();
+            InventoryType = inventoryType;
             _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
 
             // 获取背包配置
@@ -147,7 +148,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <param name="name">名称</param>
         public void SetName(string name)
         {
-            Name = !string.IsNullOrEmpty(name) ? name : InventoryType;
+            Name = !string.IsNullOrEmpty(name) ? name : InventoryType.ToString();
         }
 
         /// <summary>
@@ -278,12 +279,12 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// 添加指定数量的物品到背包
         /// </summary>
         /// <param name="item">要添加的物品</param>
-        /// <param name="amount">数量</param>
+        /// <param name="count">数量</param>
         /// <param name="slotIndex">指定槽位索引（可选）</param>
         /// <returns>实际添加的数量</returns>
-        public int AddItem(IItem item, int amount, int? slotIndex = null)
+        public int AddItem(IItem item, int count, int? slotIndex = null)
         {
-            if (item == null || amount <= 0)
+            if (item == null || count <= 0)
                 return 0;
 
             // 从配置中获取物品堆叠相关设置
@@ -300,11 +301,11 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                     return 0;
 
                 // 直接使用槽位的AddItem方法
-                return slot.AddItem(item, amount);
+                return slot.AddItem(item, count);
             }
 
             // 创建临时物品进行添加
-            IItem tempItem = item.Clone(amount);
+            IItem tempItem = item.Clone(count);
             if (tempItem == null)
                 return 0;
 
@@ -430,14 +431,14 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// 从库存移除指定数量的物品
         /// </summary>
         /// <param name="slotIndex">槽位索引</param>
-        /// <param name="amount">数量</param>
+        /// <param name="count">数量</param>
         /// <returns>移除的物品</returns>
-        public IItem RemoveItem(int slotIndex, int amount)
+        public IItem RemoveItem(int slotIndex, int count)
         {
-            if (!_slots.TryGetValue(slotIndex, out var slot) || slot.IsEmpty || slot.IsLocked || amount <= 0)
+            if (!_slots.TryGetValue(slotIndex, out var slot) || slot.IsEmpty || slot.IsLocked || count <= 0)
                 return null;
 
-            return slot.RemoveItem(amount);
+            return slot.RemoveItem(count);
         }
 
         /// <summary>
@@ -445,8 +446,11 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// </summary>
         /// <param name="itemId">物品ID</param>
         /// <returns>是否移除成功</returns>
-        public bool RemoveItem(Guid itemId)
+        public bool RemoveItem(Guid? itemId)
         {
+            if (itemId == null)
+                return false;
+
             var slot = _slots.Values.FirstOrDefault(s => !s.IsEmpty && !s.IsLocked && s.Item.Id == itemId);
             if (slot == null)
                 return false;
@@ -458,25 +462,25 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 从库存移除指定ID的物品的指定数量
         /// </summary>
-        /// <param name="itemId">物品ID</param>
-        /// <param name="amount">数量</param>
+        /// <param name="templateId">物品模板ID</param>
+        /// <param name="count">数量</param>
         /// <returns>实际移除的数量</returns>
-        public int RemoveItem(Guid itemId, int amount)
+        public int RemoveItem(Guid? templateId, int count)
         {
-            if (amount <= 0)
+            if (templateId == null || count <= 0)
                 return 0;
 
             int amountRemoved = 0;
 
-            foreach (var slot in _slots.Values.Where(s => !s.IsEmpty && !s.IsLocked && s.Item.Id == itemId))
+            foreach (var slot in _slots.Values.Where(s => !s.IsEmpty && !s.IsLocked && s.Item.TemplateId == templateId))
             {
-                int toRemove = Math.Min(amount - amountRemoved, slot.Item.StackSize);
+                int toRemove = Math.Min(count - amountRemoved, slot.Item.StackSize);
                 IItem removed = slot.RemoveItem(toRemove);
 
                 if (removed != null)
                     amountRemoved += removed.StackSize;
 
-                if (amountRemoved >= amount)
+                if (amountRemoved >= count)
                     break;
             }
 
@@ -699,91 +703,6 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         }
 
         /// <summary>
-        /// 查找物品在背包中的位置
-        /// </summary>
-        /// <param name="itemId">物品ID</param>
-        /// <returns>找到的槽位索引列表，未找到则返回空列表</returns>
-        public IReadOnlyList<int> FindItemSlots(string itemId)
-        {
-            if (string.IsNullOrEmpty(itemId))
-                return new List<int>();
-
-            return _slots.Where(kvp => !kvp.Value.IsEmpty &&
-                                      HasSameItemId(kvp.Value.Item, itemId))
-                         .Select(kvp => kvp.Key)
-                         .ToList();
-        }
-
-        /// <summary>
-        /// 查找特定类型的物品在背包中的位置
-        /// </summary>
-        /// <param name="itemType">物品类型</param>
-        /// <returns>找到的槽位索引列表，未找到则返回空列表</returns>
-        public IReadOnlyList<int> FindItemSlotsByType(ItemType itemType)
-        {
-            return _slots.Where(kvp => !kvp.Value.IsEmpty &&
-                                      kvp.Value.Item.Type == itemType)
-                         .Select(kvp => kvp.Key)
-                         .ToList();
-        }
-
-        /// <summary>
-        /// 检查背包是否包含特定物品
-        /// </summary>
-        /// <param name="itemId">物品ID</param>
-        /// <returns>是否包含</returns>
-        public bool ContainsItem(string itemId)
-        {
-            if (string.IsNullOrEmpty(itemId))
-                return false;
-
-            return _slots.Values.Any(slot => !slot.IsEmpty &&
-                                           HasSameItemId(slot.Item, itemId));
-        }
-
-        /// <summary>
-        /// 检查背包是否包含指定数量的特定物品
-        /// </summary>
-        /// <param name="itemId">物品ID</param>
-        /// <param name="amount">数量</param>
-        /// <returns>是否包含足够数量</returns>
-        public bool ContainsItem(string itemId, int amount)
-        {
-            if (string.IsNullOrEmpty(itemId) || amount <= 0)
-                return false;
-
-            int totalAmount = CountItem(itemId);
-            return totalAmount >= amount;
-        }
-
-        /// <summary>
-        /// 计算背包中指定物品的总数量
-        /// </summary>
-        /// <param name="itemId">物品ID</param>
-        /// <returns>总数量</returns>
-        public int CountItem(string itemId)
-        {
-            if (string.IsNullOrEmpty(itemId))
-                return 0;
-
-            return _slots.Values
-                .Where(slot => !slot.IsEmpty && HasSameItemId(slot.Item, itemId))
-                .Sum(slot => slot.Item.StackSize);
-        }
-
-        /// <summary>
-        /// 计算背包中指定类型物品的总数量
-        /// </summary>
-        /// <param name="itemType">物品类型</param>
-        /// <returns>总数量</returns>
-        public int CountItemsByType(ItemType itemType)
-        {
-            return _slots.Values
-                .Where(slot => !slot.IsEmpty && slot.Item.Type == itemType)
-                .Sum(slot => slot.Item.StackSize);
-        }
-
-        /// <summary>
         /// 清空背包
         /// </summary>
         /// <param name="reason">清空原因</param>
@@ -807,59 +726,34 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             return removedItems;
         }
 
-        /// <summary>
-        /// 锁定指定槽位
-        /// </summary>
-        /// <param name="slotIndex">槽位索引</param>
-        /// <param name="locked">是否锁定</param>
-        /// <returns>是否操作成功</returns>
-        public bool SetSlotLocked(int slotIndex, bool locked)
+        public IInventorySlot? FindInventorySlotById(Guid? itemId)
         {
-            if (!_slots.TryGetValue(slotIndex, out var slot))
-                return false;
+            if (itemId == null)
+                return null;
 
-            return slot.SetLocked(locked);
+            return _slots.Values.FirstOrDefault(s => !s.IsEmpty && !s.IsLocked && s.Item.Id == itemId);
         }
 
-        /// <summary>
-        /// 锁定所有槽位
-        /// </summary>
-        /// <param name="locked">是否锁定</param>
-        public void LockAllSlots(bool locked)
+        public IReadOnlyList<IInventorySlot> FindInventoriesSlotByTemplateId(Guid? templateId)
         {
-            foreach (var slot in _slots.Values)
-            {
-                slot.SetLocked(locked);
-            }
+            if (templateId == null)
+                return new List<IInventorySlot>();
+
+            return _slots.Values.Where(s => !s.IsEmpty && !s.IsLocked && s.Item.TemplateId == templateId).ToList();
         }
 
-        /// <summary>
-        /// 设置槽位的可接受物品类型
-        /// </summary>
-        /// <param name="slotIndex">槽位索引</param>
-        /// <param name="itemType">物品类型</param>
-        /// <returns>是否设置成功</returns>
-        public bool SetSlotAcceptedItemType(int slotIndex, ItemType? itemType)
+        public int FindInventorySlotIndexById(Guid? itemId)
         {
-            if (!_slots.TryGetValue(slotIndex, out var slot))
-                return false;
+            if (itemId == null)
+                return -1;
 
-            return slot.SetAcceptedItemType(itemType);
+            return _slots.FirstOrDefault(s => !s.Value.IsEmpty && !s.Value.IsLocked && s.Value.Item.Id == itemId)?.Key ?? -1;
         }
-
-        /// <summary>
-        /// 设置槽位标签
-        /// </summary>
-        /// <param name="slotIndex">槽位索引</param>
-        /// <param name="label">标签</param>
-        /// <returns>是否设置成功</returns>
-        public bool SetSlotLabel(int slotIndex, string label)
+        public IReadOnlyList<int> FindItemSlotIndexByType(ItemType itemType)
         {
-            if (!_slots.TryGetValue(slotIndex, out var slot))
-                return false;
-
-            slot.SetLabel(label);
-            return true;
+            return _slots.Where(s => !s.Value.IsEmpty && !s.Value.IsLocked && s.Value.Item.Type == itemType)
+                         .Select(s => s.Key)
+                         .ToList();
         }
 
         /// <summary>
@@ -867,7 +761,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// </summary>
         /// <param name="sortBy">排序方式，如：类型、名称、价值等</param>
         /// <returns>是否成功整理</returns>
-        public bool Sort(string sortBy = null)
+        public bool Sort(string? sortBy = null)
         {
             // 从配置中获取默认排序策略
             var config = _configManager.GetConfig<InventoryConfig>(InventoryConfig.MODULE_ID);
@@ -953,6 +847,103 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         }
 
         /// <summary>
+        /// 检查背包是否包含特定物品
+        /// </summary>
+        /// <param name="itemId">物品ID</param>
+        /// <returns>是否包含</returns>
+        public bool ContainsItem(Guid? templateId)
+        {
+            if (templateId == null)
+                return false;
+            return _slots.Values.Any(slot => !slot.IsEmpty &&
+                                           slot.Item.TemplateId == templateId);
+        }
+
+        /// <summary>
+        /// 检查背包是否包含指定数量的特定物品
+        /// </summary>
+        /// <param name="itemId">物品ID</param>
+        /// <param name="amount">数量</param>
+        /// <returns>是否包含足够数量</returns>
+        public bool ContainsItem(Guid? templateId, int amount)
+        {
+            if (templateId == null || amount <= 0)
+                return false;
+
+            int totalAmount = CountItem(templateId);
+            return totalAmount >= amount;
+        }
+
+        /// <summary>
+        /// 计算背包中指定物品的总数量
+        /// </summary>
+        /// <param name="templateId">物品模板ID</param>
+        /// <returns>总数量</returns>
+        public int CountItem(Guid? templateId)
+        {
+            if (templateId == null)
+                return 0;
+
+            return _slots.Values
+                .Where(slot => !slot.IsEmpty && HasSameItemId(slot.Item, itemId))
+                .Sum(slot => slot.Item.StackSize);
+        }
+
+        /// <summary>
+        /// 计算背包中指定类型物品的总数量
+        /// </summary>
+        /// <param name="itemType">物品类型</param>
+        /// <returns>总数量</returns>
+        public int CountItemsByType(ItemType itemType)
+        {
+            return _slots.Values
+                .Where(slot => !slot.IsEmpty && slot.Item.Type == itemType)
+                .Sum(slot => slot.Item.StackSize);
+        }
+
+
+        /// <summary>
+        /// 锁定指定槽位
+        /// </summary>
+        /// <param name="slotIndex">槽位索引</param>
+        /// <param name="locked">是否锁定</param>
+        /// <returns>是否操作成功</returns>
+        public bool SetSlotLocked(int slotIndex, bool locked)
+        {
+            if (!_slots.TryGetValue(slotIndex, out var slot))
+                return false;
+
+            return slot.SetLocked(locked);
+        }
+
+        /// <summary>
+        /// 锁定所有槽位
+        /// </summary>
+        /// <param name="locked">是否锁定</param>
+        public void LockAllSlots(bool locked)
+        {
+            foreach (var slot in _slots.Values)
+            {
+                slot.SetLocked(locked);
+            }
+        }
+
+        /// <summary>
+        /// 设置槽位标签
+        /// </summary>
+        /// <param name="slotIndex">槽位索引</param>
+        /// <param name="label">标签</param>
+        /// <returns>是否设置成功</returns>
+        public bool SetSlotLabel(int slotIndex, string label)
+        {
+            if (!_slots.TryGetValue(slotIndex, out var slot))
+                return false;
+
+            slot.SetLabel(label);
+            return true;
+        }
+
+        /// <summary>
         /// 合并堆叠
         /// </summary>
         /// <returns>合并的堆叠数量</returns>
@@ -1030,6 +1021,22 @@ namespace TacticalRPG.Implementation.Modules.Inventory
 
             return mergeCount;
         }
+        /// <summary>
+        /// 设置槽位的可接受物品类型
+        /// </summary>
+        /// <param name="slotIndex">槽位索引</param>
+        /// <param name="itemType">物品类型</param>
+        /// <returns>是否设置成功</returns>
+        public bool SetSlotAcceptedItemType(int slotIndex, ItemType? itemType)
+        {
+            if (!_slots.TryGetValue(slotIndex, out var slot))
+                return false;
+
+            return slot.SetAcceptedItemType(itemType);
+        }
+
+
+
 
         /// <summary>
         /// 获取物品的分组键（用于堆叠分组）
@@ -1052,17 +1059,6 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             return item1.TemplateId == item2.TemplateId &&
                    item1.Type == item2.Type &&
                    item1.Rarity == item2.Rarity;
-        }
-
-        /// <summary>
-        /// 检查物品是否具有指定的物品ID
-        /// </summary>
-        /// <param name="item">物品实例</param>
-        /// <param name="itemId">物品ID</param>
-        /// <returns>是否具有相同ID</returns>
-        private bool HasSameItemId(IItem item, string itemId)
-        {
-            return item.TemplateId == itemId;
         }
 
         /// <summary>
@@ -1089,6 +1085,17 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 return;
 
             _properties[key] = value;
+        }
+
+        /// <summary>
+        /// 获取所有物品的ID列表
+        /// </summary>
+        /// <returns>物品ID列表</returns>
+        public IReadOnlyList<Guid> GetAllItemIds()
+        {
+            return _slots.Values.Where(slot => !slot.IsEmpty && !slot.IsLocked)
+                                .Select(slot => slot.Item.Id)
+                                .ToList();
         }
     }
 }

@@ -10,6 +10,7 @@ using TacticalRPG.Core.Modules.Character;
 using TacticalRPG.Core.Modules.Map;
 using TacticalRPG.Implementation.Modules.Character;
 using TacticalRPG.Core.Modules.Config;
+using TacticalRPG.Core.Modules.Skill;
 
 namespace TacticalRPG.Implementation.Modules.Battle
 {
@@ -23,6 +24,7 @@ namespace TacticalRPG.Implementation.Modules.Battle
         private readonly ICharacterModule _characterModule;
         private readonly ILogger<BattleModule> _logger;
         private readonly IConfigManager _configManager;
+        private readonly ISkillModule _skillModule;
         private readonly Dictionary<Guid, Battle> _battles = new Dictionary<Guid, Battle>();
         private bool _isInitialized = false;
         private bool _isActive = false;
@@ -48,12 +50,15 @@ namespace TacticalRPG.Implementation.Modules.Battle
         /// <param name="eventManager">事件管理器</param>
         /// <param name="mapModule">地图模块</param>
         /// <param name="characterModule">角色模块</param>
+        /// <param name="skillModule">技能模块</param>
         /// <param name="logger">日志记录器</param>
-        public BattleModule(IEventManager eventManager, IMapModule mapModule, ICharacterModule characterModule, ILogger<BattleModule> logger, IConfigManager configManager)
+        /// <param name="configManager">配置管理器</param>
+        public BattleModule(IEventManager eventManager, IMapModule mapModule, ICharacterModule characterModule, ISkillModule skillModule, ILogger<BattleModule> logger, IConfigManager configManager)
         {
             _eventManager = eventManager ?? throw new ArgumentNullException(nameof(eventManager));
             _mapModule = mapModule ?? throw new ArgumentNullException(nameof(mapModule));
             _characterModule = characterModule ?? throw new ArgumentNullException(nameof(characterModule));
+            _skillModule = skillModule ?? throw new ArgumentNullException(nameof(skillModule));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
         }
@@ -541,18 +546,232 @@ namespace TacticalRPG.Implementation.Modules.Battle
         /// <param name="targetX">目标X坐标</param>
         /// <param name="targetY">目标Y坐标</param>
         /// <returns>技能结果</returns>
-        public Task<BattleActionResult> UseSkillAsync(Guid characterId, Guid skillId, int targetX, int targetY)
+        public async Task<BattleActionResult> UseSkillAsync(Guid characterId, Guid skillId, int targetX, int targetY)
         {
-            // 技能使用逻辑（后续实现）
-            return Task.FromResult(new BattleActionResult(
+            try
+            {
+                // 1. 获取当前战斗
+                if (CurrentBattle == null)
+                {
+                    _logger.LogWarning($"使用技能失败：当前没有进行中的战斗");
+                    return new BattleActionResult(false, BattleActionType.Skill, characterId, null, null, null, null, "当前没有进行中的战斗");
+                }
+
+                // 2. 获取角色
+                var character = CurrentBattle.GetBattleCharacter(characterId);
+                if (character == null)
+                {
+                    _logger.LogWarning($"使用技能失败：未找到ID为 {characterId} 的角色");
+                    return new BattleActionResult(false, BattleActionType.Skill, characterId, null, null, null, null, "未找到角色");
+                }
+
+                // 3. 获取技能
+                var skill = _skillModule.GetSkill(skillId);
+                if (skill == null)
+                {
+                    _logger.LogWarning($"使用技能失败：未找到ID为 {skillId} 的技能");
+                    return new BattleActionResult(false, BattleActionType.Skill, characterId, null, null, null, null, "未找到技能");
+                }
+
+                // 4. 检查是否可以使用技能
+                if (!_skillModule.CanUseSkill(characterId, skillId))
+                {
+                    _logger.LogWarning($"使用技能失败：角色 {characterId} 无法使用技能 {skill.Name}");
+                    return new BattleActionResult(false, BattleActionType.Skill, characterId, null, null, null, null, "无法使用技能");
+                }
+
+                // 5. 检查目标位置是否在技能范围内
+                var skillRange = _skillModule.CalculateSkillRange(skillId, character.X, character.Y);
+                var targetPosition = (targetX, targetY);
+                if (!skillRange.Contains(targetPosition))
+                {
+                    _logger.LogWarning($"使用技能失败：目标位置不在技能范围内");
+                    return new BattleActionResult(false, BattleActionType.Skill, characterId, null, null, null, null, "目标位置不在技能范围内");
+                }
+
+                // 6. 计算技能影响区域
+                var affectedArea = _skillModule.CalculateSkillArea(skillId, targetX, targetY);
+
+                // 7. 获取受影响的角色
+                var targetCharacterIds = new List<Guid>();
+                var damageList = new List<int>();
+                var isCriticalList = new List<bool>();
+                var isKilledList = new List<bool>();
+
+                foreach (var (x, y) in affectedArea)
+                {
+                    var targetCharacter = CurrentBattle.GetBattleCharacterAtPosition(x, y);
+                    if (targetCharacter != null)
+                    {
+                        // 8. 检查目标是否合法（敌人/友方）
+                        bool isValidTarget = false;
+                        switch (skill.TargetType)
+                        {
+                            case TargetType.SingleEnemy:
+                            case TargetType.AllEnemies:
+                            case TargetType.AreaEnemy:
+                                isValidTarget = targetCharacter.Team != character.Team;
+                                break;
+                            case TargetType.SingleAlly:
+                            case TargetType.AllAllies:
+                            case TargetType.AreaAlly:
+                                isValidTarget = targetCharacter.Team == character.Team;
+                                break;
+                            case TargetType.Self:
+                                isValidTarget = targetCharacter.Character.Id == character.Character.Id;
+                                break;
+                            case TargetType.AreaMixed:
+                                isValidTarget = true;
+                                break;
+                        }
+
+                        if (isValidTarget)
+                        {
+                            targetCharacterIds.Add(targetCharacter.Character.Id);
+
+                            // 9. 计算技能效果（伤害/治疗等）
+                            int effectValue = CalculateSkillEffect(character, targetCharacter, skill);
+                            bool isCritical = CalculateIsCriticalHit(character, targetCharacter);
+                            if (isCritical)
+                            {
+                                effectValue = (int)(effectValue * 1.5f);
+                            }
+
+                            // 10. 应用效果
+                            bool isKilled = ApplySkillEffect(character, targetCharacter, skill, effectValue);
+
+                            damageList.Add(effectValue);
+                            isCriticalList.Add(isCritical);
+                            isKilledList.Add(isKilled);
+                        }
+                    }
+                }
+
+                // 11. 消耗MP和设置冷却
+                character.Character.ConsumeMP(skill.MPCost);
+                skill.SetCurrentCooldown(skill.Cooldown);
+
+                // 12. 触发事件
+                // await _eventManager.PublishAsync(new SkillUsedEvent
+                // {
+                //     BattleId = CurrentBattle.Id,
+                //     CasterId = characterId,
+                //     SkillId = skillId,
+                //     TargetIds = targetCharacterIds,
+                //     Damages = damageList,
+                //     IsCriticals = isCriticalList,
+                //     IsKilleds = isKilledList
+                // });
+
+                _logger.LogInformation($"角色 {character.Character.Name} 使用技能 {skill.Name} 成功");
+                return new BattleActionResult(
                 true,
                 BattleActionType.Skill,
                 characterId,
-                new List<Guid>(),
-                new List<int>(),
-                new List<bool>(),
-                new List<bool>(),
-                "技能使用成功"));
+                    targetCharacterIds,
+                    damageList,
+                    isCriticalList,
+                    isKilledList,
+                    "技能使用成功");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"使用技能失败：角色ID {characterId}，技能ID {skillId}");
+                return new BattleActionResult(false, BattleActionType.Skill, characterId, null, null, null, null, $"使用技能失败：{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 计算技能效果值
+        /// </summary>
+        /// <param name="caster">施法者</param>
+        /// <param name="target">目标</param>
+        /// <param name="skill">技能</param>
+        /// <returns>效果值（伤害/治疗等）</returns>
+        private int CalculateSkillEffect(IBattleCharacter caster, IBattleCharacter target, ISkill skill)
+        {
+            int baseValue = skill.BasePower;
+
+            // 根据技能类型和角色属性计算实际效果值
+            switch (skill.Type)
+            {
+                case SkillType.Physical:
+                    baseValue += caster.Character.Strength * 2;
+                    baseValue -= target.Character.Constitution;
+                    break;
+                case SkillType.Magical:
+                    baseValue += caster.Character.Intelligence * 2;
+                    baseValue -= target.Character.Intelligence / 2;
+                    break;
+                case SkillType.Healing:
+                    baseValue += caster.Character.Intelligence * 2;
+                    break;
+                    // 其他技能类型的计算...
+            }
+
+            // 确保最小效果值
+            return Math.Max(1, baseValue);
+        }
+
+        /// <summary>
+        /// 计算是否暴击
+        /// </summary>
+        /// <param name="caster">施法者</param>
+        /// <param name="target">目标</param>
+        /// <returns>是否暴击</returns>
+        private bool CalculateIsCriticalHit(IBattleCharacter caster, IBattleCharacter target)
+        {
+            // 基础暴击率 5%
+            int baseCritRate = 5;
+
+            // 根据施法者的幸运值增加暴击率
+            int critRate = baseCritRate + caster.Character.Luck / 5;
+
+            // 随机判定
+            return new Random().Next(100) < critRate;
+        }
+
+        /// <summary>
+        /// 应用技能效果
+        /// </summary>
+        /// <param name="caster">施法者</param>
+        /// <param name="target">目标</param>
+        /// <param name="skill">技能</param>
+        /// <param name="effectValue">效果值</param>
+        /// <returns>目标是否死亡</returns>
+        private bool ApplySkillEffect(IBattleCharacter caster, IBattleCharacter target, ISkill skill, int effectValue)
+        {
+            switch (skill.Type)
+            {
+                case SkillType.Physical:
+                case SkillType.Magical:
+                    // 伤害技能
+                    target.TakeDamage(effectValue);
+                    break;
+                case SkillType.Healing:
+                    // 治疗技能
+                    target.HealHP(effectValue);
+                    break;
+                case SkillType.Buff:
+                    // 增益技能 - 这里需要实现buff效果
+                    // 暂时省略
+                    break;
+                case SkillType.Debuff:
+                    // 减益技能 - 这里需要实现debuff效果
+                    // 暂时省略
+                    break;
+                    // 其他技能类型...
+            }
+
+            // 判断目标是否死亡
+            bool isKilled = target.CurrentHP <= 0;
+            if (isKilled)
+            {
+                // TODO: 处理角色死亡
+                // _eventManager.PublishAsync(new CharacterDiedEvent { BattleId = CurrentBattle.Id, CharacterId = target.Character.Id });
+            }
+
+            return isKilled;
         }
 
         /// <summary>

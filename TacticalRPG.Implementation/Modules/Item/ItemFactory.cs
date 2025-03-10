@@ -1,35 +1,31 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using TacticalRPG.Core.Modules.Character;
-using TacticalRPG.Core.Modules.Equipment;
-using TacticalRPG.Core.Modules.Inventory;
-using TacticalRPG.Core.Modules.Skill;
 using TacticalRPG.Core.Modules.Config;
+using TacticalRPG.Core.Modules.Item;
+using TacticalRPG.Implementation.Framework;
 
-namespace TacticalRPG.Implementation.Modules.Inventory
+namespace TacticalRPG.Implementation.Modules.Item
 {
     /// <summary>
     /// 物品工厂实现类
     /// </summary>
     public class ItemFactory : IItemFactory
     {
+        private readonly IItemManager _itemManager;
         private readonly ILogger<ItemFactory> _logger;
         private readonly Random _random = new Random();
         private readonly Dictionary<string, Func<IItem, IItem>> _itemFactories = new Dictionary<string, Func<IItem, IItem>>();
-        private readonly IConfigManager _configManager;
         private readonly ItemConfigManager _itemConfigManager;
 
         /// <summary>
-        /// 构造函数
+        /// 物品工厂构造函数
         /// </summary>
-        /// <param name="logger">日志记录器</param>
-        /// <param name="configManager">配置管理器</param>
+        /// <param name="itemManager">物品管理器</param>
+        /// <param name="logger">日志器</param>
         /// <param name="itemConfigManager">物品配置管理器</param>
-        public ItemFactory(ILogger<ItemFactory> logger, IConfigManager configManager, ItemConfigManager itemConfigManager)
+        public ItemFactory(IItemManager itemManager, ILogger<ItemFactory> logger, ItemConfigManager itemConfigManager)
         {
+            _itemManager = itemManager ?? throw new ArgumentNullException(nameof(itemManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
             _itemConfigManager = itemConfigManager ?? throw new ArgumentNullException(nameof(itemConfigManager));
         }
 
@@ -94,75 +90,27 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             config.SetIsBound(false);
             config.SetBindType(BindType.None);
 
-            // 使用配置创建物品
-            var item = new Item(config, stackSize);
-
-            _logger.LogDebug($"创建物品: {name} (ID: {item.Id})");
-            return item;
+            return new Item(config, stackSize);
         }
 
         /// <summary>
-        /// 从装备创建物品
+        /// 创建消耗品
         /// </summary>
-        /// <param name="equipment">装备实例</param>
-        /// <returns>创建的物品实例</returns>
-        public IItem CreateFromEquipment(IEquipment equipment)
-        {
-            if (equipment == null)
-                throw new ArgumentNullException(nameof(equipment));
-
-            // 创建唯一的物品ID
-            string itemId = $"equipment_{Guid.NewGuid():N}";
-
-            // 创建物品配置
-            var config = _itemConfigManager.CreateItemConfig(itemId, equipment.Name);
-            config.SetName(equipment.Name);
-            config.SetDescription(equipment.Description);
-            config.SetType(ItemType.Equipment);
-            config.SetRarity((ItemRarity)equipment.Rarity);
-            config.SetIsStackable(false);
-            config.SetMaxStackSize(1);
-            config.SetWeight(equipment.Weight);
-            config.SetValue(equipment.Value);
-            config.SetIsUsable(false);
-            config.SetIsEquippable(true);
-            config.SetIsSellable(true);
-            config.SetIsDroppable(true);
-            config.SetIsTradable(true);
-            config.SetIsBound(false);
-            config.SetBindType(BindType.None);
-            config.SetLevel(equipment.Level);
-            config.SetLevelRequirement(equipment.Level - 2);
-            config.SetDurability((int)equipment.Durability);
-            config.SetMaxDurability((int)equipment.MaxDurability);
-            config.SetEquipSlot(EquipmentSlot.MainHand);
-
-            // 使用配置创建物品
-            var item = new Item(config);
-            item.SetEquipmentInstance(equipment);
-
-            _logger.LogDebug($"从装备创建物品: {item.Name} (ID: {item.Id})");
-            return item;
-        }
-
-        /// <summary>
-        /// 创建消耗品物品
-        /// </summary>
-        /// <param name="name">物品名称</param>
-        /// <param name="description">物品描述</param>
-        /// <param name="rarity">物品稀有度</param>
+        /// <param name="name">名称</param>
+        /// <param name="description">描述</param>
+        /// <param name="rarity">稀有度</param>
         /// <param name="effectType">效果类型</param>
         /// <param name="effectValue">效果值</param>
         /// <param name="maxStackSize">最大堆叠数量</param>
-        /// <param name="weight">物品重量</param>
-        /// <param name="value">物品价值</param>
+        /// <param name="weight">重量</param>
+        /// <param name="value">价值</param>
         /// <param name="stackSize">初始堆叠数量</param>
-        /// <returns>创建的消耗品物品实例</returns>
+        /// <returns>消耗品物品实例</returns>
         public IItem CreateConsumable(
             string name,
             string description,
             ItemRarity rarity,
-            EquipmentStatType effectType,
+            string effectType,
             float effectValue,
             int maxStackSize = 99,
             float weight = 0.1f,
@@ -181,12 +129,10 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 stackSize);
 
             // 设置消耗品特有属性
-            ((Item)item).SetUseEffect($"{effectType}:{effectValue}");
-            ((Item)item).SetUsable(true);
-            ((Item)item).SetAttribute("EffectType", effectType);
-            ((Item)item).SetAttribute("EffectValue", effectValue);
+            item.SetProperty("EffectType", effectType);
+            item.SetProperty("EffectValue", effectValue);
+            item.SetProperty("UseEffect", "UseConsumable");
 
-            _logger.LogDebug($"创建消耗品: {item.Name} (ID: {item.Id})，效果: {effectType} {effectValue}");
             return item;
         }
 
@@ -225,9 +171,8 @@ namespace TacticalRPG.Implementation.Modules.Inventory
 
             // 设置材料特有属性
             if (!string.IsNullOrEmpty(materialType))
-                ((Item)item).SetAttribute("MaterialType", materialType);
+                item.SetProperty("MaterialType", materialType);
 
-            _logger.LogDebug($"创建材料: {item.Name} (ID: {item.Id})，类型: {materialType}");
             return item;
         }
 
@@ -257,12 +202,11 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 1);
 
             // 设置任务物品特有属性
-            ((Item)item).SetAttribute("QuestId", questId);
-            ((Item)item).SetDroppable(false);
-            ((Item)item).SetSellable(false);
-            ((Item)item).SetLocked(isLocked);
+            item.SetProperty("QuestId", questId);
+            item.SetProperty("Droppable", false);
+            item.SetProperty("Sellable", false);
+            item.SetProperty("Locked", isLocked);
 
-            _logger.LogDebug($"创建任务物品: {item.Name} (ID: {item.Id})，任务ID: {questId}");
             return item;
         }
 
@@ -291,7 +235,6 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 value,
                 amount);
 
-            _logger.LogDebug($"创建货币: {item.Name} (ID: {item.Id})，价值: {value}，数量: {amount}");
             return item;
         }
 
@@ -325,10 +268,9 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 1);
 
             // 设置容器特有属性
-            ((Item)item).SetAttribute("Capacity", capacity);
-            ((Item)item).SetUsable(true);
+            item.SetProperty("Capacity", capacity);
+            item.SetProperty("Usable", true);
 
-            _logger.LogDebug($"创建容器: {item.Name} (ID: {item.Id})，容量: {capacity}");
             return item;
         }
 
@@ -362,32 +304,65 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 1);
 
             // 设置技能书特有属性
-            ((Item)item).SetAttribute("SkillId", skillId);
-            ((Item)item).SetUsable(true);
+            item.SetProperty("SkillId", skillId);
+            item.SetProperty("Usable", true);
 
-            _logger.LogDebug($"创建技能书: {item.Name} (ID: {item.Id})，技能ID: {skillId}");
             return item;
         }
 
         /// <summary>
-        /// 根据模板创建物品
+        /// 从模板创建物品
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <param name="stackSize">堆叠数量</param>
-        /// <returns>创建的物品实例</returns>
+        /// <returns>创建的物品</returns>
         public IItem CreateFromTemplate(string templateId, int stackSize = 1)
         {
             if (string.IsNullOrEmpty(templateId))
-                throw new ArgumentException("模板ID不能为空", nameof(templateId));
+            {
+                _logger.LogError("创建物品失败：模板ID不能为空");
+                return null;
+            }
 
-            var config = _itemConfigManager.GetItemConfig(templateId);
-            if (config == null)
-                throw new KeyNotFoundException($"找不到物品配置: {templateId}");
+            try
+            {
+                // 直接从ItemManager获取模板
+                var template = _itemManager.GetItemTemplate(templateId);
+                if (template == null)
+                {
+                    _logger.LogError($"创建物品失败：找不到模板 {templateId}");
+                    return null;
+                }
 
-            var item = new Item(config, stackSize);
+                // 创建物品配置
+                var config = _itemConfigManager.CreateItemConfig(templateId, template.Name);
 
-            _logger.LogDebug($"从模板创建物品: {item.Name} (ID: {item.Id})，模板ID: {templateId}，堆叠数量: {item.StackSize}");
-            return item;
+                // 从模板复制所有基本属性
+                config.SetName(template.Name);
+                config.SetDescription(template.Description);
+                config.SetType(template.Type);
+                config.SetRarity(template.Rarity);
+                config.SetIconPath(template.IconPath);
+                config.SetIsStackable(template.IsStackable);
+                config.SetMaxStackSize(template.MaxStackSize);
+                config.SetWeight(template.Weight);
+                config.SetValue(template.Value);
+                config.SetTemplateId(templateId);
+
+                // 根据物品类型设置默认值
+                config.SetIsUsable(template.Type == ItemType.Consumable);
+                config.SetIsEquippable(template.Type == ItemType.Equipment);
+
+                // 创建物品实例
+                var item = new Item(config, Math.Min(stackSize, template.MaxStackSize));
+
+                return item;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"从模板 {templateId} 创建物品时出错");
+                return null;
+            }
         }
 
         /// <summary>
@@ -488,7 +463,6 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                     break;
             }
 
-            _logger.LogDebug($"创建随机物品: {item.Name} (ID: {item.Id})，类型: {type}，稀有度: {rarity}");
             return item;
         }
 
@@ -509,7 +483,6 @@ namespace TacticalRPG.Implementation.Modules.Inventory
 
             var item = new Item(config, stackSize);
 
-            _logger.LogDebug($"从配置创建物品: {item.Name} (ID: {item.Id})，物品ID: {itemId}，堆叠数量: {item.StackSize}");
             return item;
         }
 
@@ -529,15 +502,39 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             if (config == null)
                 return null;
 
-            // 从配置中获取最大堆叠大小
-            var inventoryConfig = _configManager.GetConfig<InventoryConfig>(InventoryConfig.MODULE_ID);
-            int configMaxStackSize = inventoryConfig?.MaxStackSize ?? 99;
+            // 获取最大堆叠数量，使用物品自身配置的值，如果未设置则使用默认值
+            int maxStackSize = config.IsStackable
+                ? (config.MaxStackSize > 0 ? config.MaxStackSize : GetDefaultMaxStackSize(config.Type))
+                : 1;
 
             // 使用配置创建物品
-            var item = new Item(config, Math.Min(amount, config.IsStackable ? (config.MaxStackSize > 0 ? config.MaxStackSize : configMaxStackSize) : 1));
+            var item = new Item(config, Math.Min(amount, maxStackSize));
 
-            _logger.LogDebug($"创建物品: {item.Name} (ID: {item.Id}, 物品ID: {itemId})");
             return item;
         }
+
+        /// <summary>
+        /// 获取物品类型的默认最大堆叠数量
+        /// </summary>
+        /// <param name="itemType">物品类型</param>
+        /// <returns>默认最大堆叠数量</returns>
+        private int GetDefaultMaxStackSize(ItemType itemType)
+        {
+            switch (itemType)
+            {
+                case ItemType.Consumable:
+                    return 99;
+                case ItemType.Material:
+                    return 999;
+                case ItemType.Currency:
+                    return 9999;
+                case ItemType.Equipment:
+                case ItemType.QuestItem:
+                    return 1;
+                default:
+                    return 1;
+            }
+        }
+
     }
 }
