@@ -299,7 +299,22 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             {
                 if (!_slots.TryGetValue(slotIndex.Value, out var slot))
                     return 0;
-
+                if (slot.IsEmpty)
+                {
+                    if (slot.SetItem(item))
+                    {
+                        return slotIndex.Value;
+                    }
+                    return 0;
+                }
+                if (slot.CanAcceptItem(item))
+                {
+                    slot.AddCount(count);
+                    if (slot.SetItem(item))
+                    {
+                        return slotIndex.Value;
+                    }
+                }
                 // 直接使用槽位的AddItem方法
                 return slot.AddItem(item, count);
             }
@@ -535,17 +550,17 @@ namespace TacticalRPG.Implementation.Modules.Inventory
 
                     if (fromItem != null && toItem != null)
                     {
-                        toSlot.AddItem(fromItem);
-                        fromSlot.AddItem(toItem);
+                        toSlot.SetItem(fromItem);
+                        fromSlot.SetItem(toItem);
                         return true;
                     }
                     else
                     {
                         // 恢复原状
                         if (fromItem != null)
-                            fromSlot.AddItem(fromItem);
+                            fromSlot.SetItem(fromItem);
                         if (toItem != null)
-                            toSlot.AddItem(toItem);
+                            toSlot.SetItem(toItem);
                         return false;
                     }
                 }
@@ -554,7 +569,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             else
             {
                 IItem item = fromSlot.RemoveItem();
-                return toSlot.AddItem(item);
+                return toSlot.SetItem(item);
             }
         }
 
@@ -591,7 +606,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             if (toSlot.IsEmpty)
             {
                 IItem item = fromSlot.RemoveItem(amount);
-                if (item != null && toSlot.AddItem(item))
+                if (item != null && toSlot.SetItem(item))
                     return amount;
                 return 0;
             }
@@ -636,12 +651,12 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             if (slot1.IsEmpty)
             {
                 IItem item = slot2.RemoveItem();
-                return slot1.AddItem(item);
+                return slot1.SetItem(item);
             }
             else if (slot2.IsEmpty)
             {
                 IItem item = slot1.RemoveItem();
-                return slot2.AddItem(item);
+                return slot2.SetItem(item);
             }
             else
             {
@@ -654,15 +669,15 @@ namespace TacticalRPG.Implementation.Modules.Inventory
 
                 bool success = true;
 
-                if (!slot2.AddItem(item1))
+                if (!slot2.SetItem(item1))
                 {
-                    slot1.AddItem(item1);
+                    slot1.SetItem(item1);
                     success = false;
                 }
 
-                if (!slot1.AddItem(item2))
+                if (!slot1.SetItem(item2))
                 {
-                    slot2.AddItem(item2);
+                    slot2.SetItem(item2);
                     success = false;
                 }
 
@@ -741,13 +756,17 @@ namespace TacticalRPG.Implementation.Modules.Inventory
 
             return _slots.Values.Where(s => !s.IsEmpty && !s.IsLocked && s.Item.TemplateId == templateId).ToList();
         }
-
+        /// <summary>
+        /// 根据物品ID查找槽位索引
+        /// </summary>
+        /// <param name="itemId">物品ID</param>
+        /// <returns>槽位索引</returns>
         public int FindInventorySlotIndexById(Guid? itemId)
         {
             if (itemId == null)
                 return -1;
-
-            return _slots.FirstOrDefault(s => !s.Value.IsEmpty && !s.Value.IsLocked && s.Value.Item.Id == itemId)?.Key ?? -1;
+            var findResult = _slots.FirstOrDefault(s => !s.Value.IsEmpty && !s.Value.IsLocked && s.Value.Item.Id == itemId);
+            return findResult.Equals(default(KeyValuePair<int, IInventorySlot>)) ? -1 : findResult.Key;
         }
         public IReadOnlyList<int> FindItemSlotIndexByType(ItemType itemType)
         {
@@ -885,7 +904,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 return 0;
 
             return _slots.Values
-                .Where(slot => !slot.IsEmpty && HasSameItemId(slot.Item, itemId))
+                .Where(slot => !slot.IsEmpty && slot.Item.TemplateId == templateId)
                 .Sum(slot => slot.Item.StackSize);
         }
 

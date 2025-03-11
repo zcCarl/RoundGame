@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TacticalRPG.Core.Modules.Inventory;
+using TacticalRPG.Core.Modules.Item;
 
 namespace TacticalRPG.Implementation.Modules.Inventory
 {
@@ -9,12 +10,12 @@ namespace TacticalRPG.Implementation.Modules.Inventory
     /// </summary>
     public class InventorySlot : IInventorySlot
     {
-        private Dictionary<string, object> _properties = new Dictionary<string, object>();
+        private Dictionary<string, object?> _properties = new Dictionary<string, object?>();
         private bool _isLocked = false;
         private ItemType? _acceptedItemType = null;
         private string _label = string.Empty;
-        private Guid _itemId = Guid.Empty;
-        private int _count = 0;
+        private IItem? _item = null;
+        private int _count => _item?.StackSize ?? 0;
 
         /// <summary>
         /// 获取槽位索引
@@ -24,7 +25,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 获取槽位是否为空
         /// </summary>
-        public bool IsEmpty => _itemId == Guid.Empty || _count <= 0;
+        public bool IsEmpty => _item == null || _count <= 0;
 
         /// <summary>
         /// 获取槽位是否被锁定
@@ -44,7 +45,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 获取槽位中的物品ID
         /// </summary>
-        public Guid ItemId => _itemId;
+        public IItem? Item => _item;
 
         /// <summary>
         /// 获取物品数量
@@ -66,21 +67,20 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <param name="itemId">物品ID</param>
         /// <param name="count">数量</param>
         /// <returns>是否设置成功</returns>
-        public bool SetItem(Guid itemId, int count)
+        public bool SetItem(IItem item)
         {
             if (_isLocked)
             {
                 return false; // 槽位被锁定，无法设置物品
             }
 
-            if (itemId == Guid.Empty || count <= 0)
+            if (item == null)
             {
                 Clear(); // 清空槽位
                 return true;
             }
 
-            _itemId = itemId;
-            _count = count;
+            _item = item;
             return true;
         }
 
@@ -94,26 +94,27 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 return; // 槽位被锁定，无法清空
             }
 
-            _itemId = Guid.Empty;
-            _count = 0;
+            _item = null;
         }
 
         /// <summary>
         /// 锁定或解锁槽位
         /// </summary>
         /// <param name="locked">是否锁定</param>
-        public void SetLocked(bool locked)
+        public bool SetLocked(bool locked)
         {
             _isLocked = locked;
+            return true;
         }
 
         /// <summary>
         /// 设置槽位接受的物品类型
         /// </summary>
         /// <param name="itemType">物品类型</param>
-        public void SetAcceptedItemType(ItemType? itemType)
+        public bool SetAcceptedItemType(ItemType? itemType)
         {
             _acceptedItemType = itemType;
+            return true;
         }
 
         /// <summary>
@@ -137,8 +138,8 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 return 0;
             }
 
-            _count += amount;
-            return amount;
+            
+            return Item?.AddToStack(amount) ?? 0;
         }
 
         /// <summary>
@@ -154,9 +155,9 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             }
 
             int actualAmount = Math.Min(_count, amount);
-            _count -= actualAmount;
+            actualAmount = Item?.RemoveFromStack(actualAmount) ?? 0;
 
-            if (_count <= 0)
+            if (Item?.StackSize <= 0)
             {
                 Clear(); // 数量为零，清空槽位
             }
@@ -164,42 +165,16 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             return actualAmount;
         }
 
-        /// <summary>
-        /// 获取槽位的自定义属性
-        /// </summary>
-        /// <param name="key">属性键</param>
-        /// <returns>属性值，如不存在则返回null</returns>
-        public object GetProperty(string key)
+        public IItem? RemoveItem()
         {
-            if (string.IsNullOrEmpty(key) || !_properties.ContainsKey(key))
+            if (IsEmpty)
             {
                 return null;
             }
-
-            return _properties[key];
+            IItem? item = _item;
+            _item = null;
+            return item;
         }
-
-        /// <summary>
-        /// 设置槽位的自定义属性
-        /// </summary>
-        /// <param name="key">属性键</param>
-        /// <param name="value">属性值</param>
-        public void SetProperty(string key, object value)
-        {
-            if (string.IsNullOrEmpty(key))
-            {
-                return;
-            }
-
-            if (value == null && _properties.ContainsKey(key))
-            {
-                _properties.Remove(key);
-                return;
-            }
-
-            _properties[key] = value;
-        }
-
         /// <summary>
         /// 检查槽位是否可以接受指定物品
         /// </summary>
@@ -250,11 +225,49 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         }
 
         /// <summary>
+        /// 获取槽位的自定义属性
+        /// </summary>
+        /// <param name="key">属性键</param>
+        /// <returns>属性值，如不存在则返回null</returns>
+        public object? GetProperty(string key)
+        {
+            if (string.IsNullOrEmpty(key) || !_properties.ContainsKey(key))
+            {
+                return null;
+            }
+
+            return _properties[key];
+        }
+
+        /// <summary>
+        /// 设置槽位的自定义属性
+        /// </summary>
+        /// <param name="key">属性键</param>
+        /// <param name="value">属性值</param>
+        public void SetProperty(string key, object? value)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                return;
+            }
+
+            if (value == null && _properties.ContainsKey(key))
+            {
+                _properties.Remove(key);
+                return;
+            }
+
+            _properties[key] = value;
+        }
+
+
+
+        /// <summary>
         /// 尝试合并物品到槽位中的物品
         /// </summary>
         /// <param name="item">要合并的物品</param>
         /// <returns>合并后剩余的物品（如完全合并则返回null）</returns>
-        public IItem MergeItem(IItem item)
+        public IItem? MergeItem(IItem item)
         {
             if (IsLocked || item == null)
             {
@@ -266,7 +279,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             {
                 if (CanAcceptItem(item))
                 {
-                    Item = item;
+                    _item = item;
                     return null;
                 }
                 return item;
@@ -284,16 +297,5 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             return item;
         }
 
-        /// <summary>
-        /// 设置槽位中的物品
-        /// </summary>
-        /// <param name="item">物品实例</param>
-        public void SetItem(IItem item)
-        {
-            if (!IsLocked)
-            {
-                Item = item;
-            }
-        }
     }
 }

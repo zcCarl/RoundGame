@@ -11,3 +11,12 @@
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/TacticalRPG.Core.pdb
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/ref/TacticalRPG.Core.dll
 /Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/obj/Debug/net8.0/TacticalRPG.Core.sourcelink.json
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.csproj.AssemblyReference.cache
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.AssemblyInfoInputs.cache
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.AssemblyInfo.cs
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.csproj.CoreCompileInputs.cache
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.sourcelink.json
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.dll
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\refint\TacticalRPG.Core.dll
+D:\Program Files\Work\RoundGame\TacticalRPG.Core\obj\Debug\net8.0\TacticalRPG.Core.pdb

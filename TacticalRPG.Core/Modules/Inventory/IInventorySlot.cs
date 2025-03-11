@@ -37,7 +37,7 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <summary>
         /// 获取槽位中的物品
         /// </summary>
-        IItem Item { get; }
+        IItem? Item { get; }
 
         /// <summary>
         /// 获取物品数量
@@ -48,10 +48,8 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// 设置物品ID和数量
         /// </summary>
         /// <param name="item">物品</param>
-        /// <param name="count">数量</param>
         /// <returns>是否设置成功</returns>
-        bool SetItem(IItem item, int count);
-
+        bool SetItem(IItem item);
         /// <summary>
         /// 清空槽位
         /// </summary>
@@ -61,7 +59,7 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// 锁定或解锁槽位
         /// </summary>
         /// <param name="locked">是否锁定</param>
-        void SetLocked(bool locked);
+        bool SetLocked(bool locked);
 
         /// <summary>
         /// 设置槽位接受的物品类型
@@ -87,17 +85,12 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// </summary>
         /// <param name="amount">减少数量</param>
         /// <returns>实际减少的数量</returns>
-        IItem RemoveItem(int amount);
+        int RemoveCount(int amount);
         /// <summary>
         /// 移除物品引用
         /// </summary>
         /// <returns>物品ID</returns>
-        IItem RemoveItem();
-        /// <summary>
-        /// 设置物品引用
-        /// </summary>
-        /// <param name="item">物品</param>
-        void SetItem(IItem item);
+        IItem? RemoveItem();
         /// <summary>
         /// 检查槽位是否可以接受指定物品
         /// </summary>
@@ -105,10 +98,28 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <returns>是否可以接受</returns>
         bool CanAcceptItem(IItem item);
         /// <summary>
+        /// 检查槽位是否可以接受指定类型物品
+        /// </summary>
+        /// <param name="itemType">物品类型</param>
+        /// <returns>是否可以接受</returns>
+        bool CanAcceptItemType(ItemType itemType);
+        /// <summary>
         /// 合并物品
         /// </summary>
         /// <param name="item">物品</param>
         /// <returns>合并后的物品</returns>
-        IItem MergeItem(IItem item);
+        IItem? MergeItem(IItem item);
+        /// <summary>
+        /// 设置自定义属性
+        /// </summary>
+        /// <param name="key">属性名</param>
+        /// <param name="value">属性值</param>
+        void SetProperty(string key, object? value);
+        /// <summary>
+        /// 获取自定义属性
+        /// </summary>
+        /// <param name="key">属性名</param>
+        /// <returns>属性值</returns>
+        object? GetProperty(string key);
     }
 }

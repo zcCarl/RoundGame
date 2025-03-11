@@ -157,7 +157,7 @@ namespace TacticalRPG.Core.Modules.Item
         /// </summary>
         /// <param name="item">要合并的物品</param>
         /// <returns>合并后的剩余物品（如完全合并则为null）</returns>
-        IItem MergeStack(IItem item);
+        IItem? MergeStack(IItem item);
 
         /// <summary>
         /// 锁定/解锁物品
