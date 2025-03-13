@@ -17,21 +17,21 @@ namespace TacticalRPG.Core.Modules.Item
         /// <summary>
         /// 注册的物品模板
         /// </summary>
-        Dictionary<string, IItemTemplate> ItemTemplates { get; }
+        Dictionary<Guid, IItemTemplate> ItemTemplates { get; }
 
         /// <summary>
         /// 注册物品模板
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <param name="itemTemplate">物品模板</param>
-        void RegisterItemTemplate(string templateId, IItemTemplate itemTemplate);
+        void RegisterItemTemplate(Guid templateId, IItemTemplate itemTemplate);
 
         /// <summary>
         /// 获取物品模板
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <returns>物品模板</returns>
-        IItemTemplate GetItemTemplate(string templateId);
+        IItemTemplate GetItemTemplate(Guid templateId);
 
         /// <summary>
         /// 创建物品实例
@@ -39,7 +39,7 @@ namespace TacticalRPG.Core.Modules.Item
         /// <param name="templateId">模板ID</param>
         /// <param name="stackSize">堆叠数量</param>
         /// <returns>创建的物品实例</returns>
-        IItem CreateItem(string templateId, int stackSize = 1);
+        IItem CreateItem(Guid templateId, int stackSize = 1);
 
         /// <summary>
         /// 查找物品
@@ -53,7 +53,7 @@ namespace TacticalRPG.Core.Modules.Item
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <returns>物品实例列表</returns>
-        List<IItem> FindItemsByTemplate(string templateId);
+        List<IItem> FindItemsByTemplate(Guid templateId);
 
         /// <summary>
         /// 根据所有者ID查找物品

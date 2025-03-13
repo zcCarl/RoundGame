@@ -12,7 +12,7 @@ namespace TacticalRPG.Implementation.Modules.Item
     /// </summary>
     public class ItemManager : IItemManager
     {
-        private readonly Dictionary<string, IItemTemplate> _itemTemplates = new Dictionary<string, IItemTemplate>();
+        private readonly Dictionary<Guid, IItemTemplate> _itemTemplates = new Dictionary<Guid, IItemTemplate>();
         private readonly ILogger<ItemManager> _logger;
         private readonly IItemFactory _itemFactory;
         private readonly ItemRegistry _itemRegistry;
@@ -25,7 +25,7 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// <summary>
         /// 注册的物品模板
         /// </summary>
-        public Dictionary<string, IItemTemplate> ItemTemplates => _itemTemplates;
+        public Dictionary<Guid, IItemTemplate> ItemTemplates => _itemTemplates;
 
         /// <summary>
         /// 构造函数
@@ -44,9 +44,9 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <param name="itemTemplate">物品模板</param>
-        public void RegisterItemTemplate(string templateId, IItemTemplate itemTemplate)
+        public void RegisterItemTemplate(Guid templateId, IItemTemplate itemTemplate)
         {
-            if (string.IsNullOrEmpty(templateId))
+            if (templateId == Guid.Empty)
             {
                 _logger.LogWarning("注册物品模板失败：模板ID为空");
                 return;
@@ -72,9 +72,9 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <returns>物品模板</returns>
-        public IItemTemplate GetItemTemplate(string templateId)
+        public IItemTemplate GetItemTemplate(Guid templateId)
         {
-            if (string.IsNullOrEmpty(templateId))
+            if (templateId == Guid.Empty)
             {
                 _logger.LogWarning("获取物品模板失败：模板ID为空");
                 return null;
@@ -95,7 +95,7 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// <param name="templateId">模板ID</param>
         /// <param name="stackSize">堆叠数量</param>
         /// <returns>创建的物品实例</returns>
-        public IItem CreateItem(string templateId, int stackSize = 1)
+        public IItem CreateItem(Guid templateId, int stackSize = 1)
         {
             var template = GetItemTemplate(templateId);
             if (template == null)
@@ -134,7 +134,7 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// </summary>
         /// <param name="templateId">模板ID</param>
         /// <returns>物品实例列表</returns>
-        public List<IItem> FindItemsByTemplate(string templateId)
+        public List<IItem> FindItemsByTemplate(Guid templateId)
         {
             var result = new List<IItem>();
 
@@ -236,7 +236,7 @@ namespace TacticalRPG.Implementation.Modules.Item
                 }
 
                 // 尝试从模板创建物品
-                if (!string.IsNullOrEmpty(itemInfo.TemplateId))
+                if (itemInfo.TemplateId != Guid.Empty)
                 {
                     var item = _itemFactory.CreateFromTemplate(itemInfo.TemplateId, itemInfo.StackSize);
                     if (item != null)
@@ -311,7 +311,7 @@ namespace TacticalRPG.Implementation.Modules.Item
             {
                 var itemInfo = new ItemSerializationInfo
                 {
-                    Id = item.Id.ToString(),
+                    Id = item.Id,
                     TemplateId = item.TemplateId,
                     Name = item.Name,
                     Description = item.Description,
@@ -596,12 +596,12 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// <summary>
         /// 物品ID
         /// </summary>
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         /// <summary>
         /// 模板ID
         /// </summary>
-        public string TemplateId { get; set; }
+        public Guid TemplateId { get; set; }
 
         /// <summary>
         /// 物品名称

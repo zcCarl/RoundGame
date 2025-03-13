@@ -54,13 +54,13 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// </summary>
         /// <param name="itemId">物品ID</param>
         /// <returns>配置模块ID</returns>
-        public static string GetModuleId(string itemId) => $"{MODULE_ID_PREFIX}.{itemId}";
+        public static string GetModuleId(int itemId) => $"{MODULE_ID_PREFIX}.{itemId}";
 
         /// <summary>
         /// 获取物品模板ID
         /// </summary>
         /// <returns>模板ID</returns>
-        public string TemplateId => GetValue<string>(KEY_ID, "");
+        public Guid TemplateId => GetValue<Guid>(KEY_ID, Guid.Empty);
 
         /// <summary>
         /// 获取物品名称
@@ -365,12 +365,9 @@ namespace TacticalRPG.Implementation.Modules.Item
         /// </summary>
         /// <param name="itemId">物品ID</param>
         /// <param name="name">物品名称</param>
-        public ItemConfig(string itemId, string name = "")
+        public ItemConfig(int itemId, string name = "")
             : base(GetModuleId(itemId), name ?? "未命名物品", new Version(1, 0, 0))
         {
-            if (string.IsNullOrEmpty(itemId))
-                throw new ArgumentException("物品ID不能为空", nameof(itemId));
-
             InitDefaultValues();
             if (!string.IsNullOrEmpty(name))
                 SetName(name);

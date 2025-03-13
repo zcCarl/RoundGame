@@ -147,7 +147,7 @@ namespace TacticalRPG.Core.Modules.Item
         /// <param name="templateId">模板ID</param>
         /// <param name="stackSize">堆叠数量</param>
         /// <returns>创建的物品实例</returns>
-        IItem CreateFromTemplate(string templateId, int stackSize = 1);
+        IItem CreateFromTemplate(Guid templateId, int stackSize = 1);
 
         /// <summary>
         /// 创建随机物品

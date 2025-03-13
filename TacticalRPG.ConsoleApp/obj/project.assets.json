@@ -953,19 +953,19 @@
     ]
   },
   "packageFolders": {
-    "/Users/quanchao/.nuget/packages/": {}
+    "C:\\Users\\it\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/quanchao/Cursor/RoundGame/TacticalRPG.ConsoleApp/TacticalRPG.ConsoleApp.csproj",
+      "projectUniqueName": "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.ConsoleApp\\TacticalRPG.ConsoleApp.csproj",
       "projectName": "TacticalRPG.ConsoleApp",
-      "projectPath": "/Users/quanchao/Cursor/RoundGame/TacticalRPG.ConsoleApp/TacticalRPG.ConsoleApp.csproj",
-      "packagesPath": "/Users/quanchao/.nuget/packages/",
-      "outputPath": "/Users/quanchao/Cursor/RoundGame/TacticalRPG.ConsoleApp/obj/",
+      "projectPath": "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.ConsoleApp\\TacticalRPG.ConsoleApp.csproj",
+      "packagesPath": "C:\\Users\\it\\.nuget\\packages\\",
+      "outputPath": "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.ConsoleApp\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/quanchao/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\it\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -977,11 +977,11 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/TacticalRPG.Core.csproj": {
-              "projectPath": "/Users/quanchao/Cursor/RoundGame/TacticalRPG.Core/TacticalRPG.Core.csproj"
+            "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.Core\\TacticalRPG.Core.csproj": {
+              "projectPath": "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.Core\\TacticalRPG.Core.csproj"
             },
-            "/Users/quanchao/Cursor/RoundGame/TacticalRPG.Implementation/TacticalRPG.Implementation.csproj": {
-              "projectPath": "/Users/quanchao/Cursor/RoundGame/TacticalRPG.Implementation/TacticalRPG.Implementation.csproj"
+            "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.Implementation\\TacticalRPG.Implementation.csproj": {
+              "projectPath": "D:\\Program Files\\Work\\RoundGame\\TacticalRPG.Implementation\\TacticalRPG.Implementation.csproj"
             }
           }
         }
@@ -990,7 +990,13 @@
         "warnAsError": [
           "NU1605"
         ]
-      }
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net8.0": {
@@ -1020,12 +1026,30 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.13, 8.0.13]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.win-x64",
+            "version": "[8.0.13, 8.0.13]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.13, 8.0.13]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[8.0.13, 8.0.13]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.100/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
