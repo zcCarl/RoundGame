@@ -100,7 +100,7 @@ namespace TacticalRPG.Core.Modules.Inventory
         /// <param name="characterId">角色ID</param>
         /// <param name="itemId">物品实例ID</param>
         /// <returns>物品实例ID</returns>
-        Task<Guid> GetItemAsync(Guid characterId, Guid itemId);
+        Task<IItem> GetItemAsync(Guid characterId, Guid itemId);
 
         /// <summary>
         /// 根据模板ID获取物品实例ID

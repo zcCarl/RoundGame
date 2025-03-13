@@ -17,7 +17,7 @@ namespace TacticalRPG.Core.Modules.Item
         /// <param name="templateId">物品模板ID</param>
         /// <param name="stackSize">堆叠数量</param>
         /// <returns>物品ID</returns>
-        Task<Guid> CreateItemAsync(string templateId, int stackSize = 1);
+        Task<IItem> CreateItemAsync(string templateId, int stackSize = 1);
 
         /// <summary>
         /// 获取物品实例

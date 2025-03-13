@@ -64,16 +64,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
             Logger.LogInformation("物品背包模块初始化完成");
         }
 
-        /// <summary>
-        /// 创建物品
-        /// </summary>
-        /// <param name="templateId">物品模板ID</param>
-        /// <param name="stackSize">堆叠数量</param>
-        /// <returns>创建的物品</returns>
-        public IItem CreateItem(string templateId, int stackSize = 1)
-        {
-            return _itemModule.CreateItem(templateId, stackSize);
-        }
+
 
         /// <summary>
         /// 创建角色背包
@@ -608,7 +599,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
         /// <summary>
         /// 获取物品实例
         /// </summary>
-        public async Task<Guid> GetItemAsync(Guid characterId, Guid itemId)
+        public async Task<IItem> GetItemAsync(Guid characterId, Guid itemId)
         {
             var inventories = await GetCharacterInventoriesAsync(characterId);
             foreach (var inventory in inventories)
@@ -616,7 +607,7 @@ namespace TacticalRPG.Implementation.Modules.Inventory
                 var items = await GetInventoryItemsAsync(inventory.Id);
                 if (items.Contains(itemId))
                 {
-                    return itemId;
+                    return inventory.GetSlot(itemId).Item;
                 }
             }
 

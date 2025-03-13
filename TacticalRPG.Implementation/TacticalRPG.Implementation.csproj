@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TacticalRPG.Core\TacticalRPG.Core.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
   </ItemGroup>
 
   <PropertyGroup>
